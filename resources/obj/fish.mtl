@@ -1,0 +1,53 @@
+newmtl blinn1SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd hujing.jpg
+bump hjiris-bump.jpg -bm 0.03
+Ni 1.00
+Ks 0.00 0.00 0.00
+map_Ks hujing_gg.jpg
+newmtl blue_eyes_blinn7SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+bump hjiris-bump.jpg -bm 1.2812
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blue_eyes_blinn8SG
+illum 4
+Kd 0.22 0.32 0.32
+Ka 0.00 0.00 0.00
+Tf 0.07 0.07 0.07
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blue_eyes_blinn9SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.16 0.14 0.12
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.74 0.74 0.74
+newmtl lambert3SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd hujing_kouqiang.jpg
+Ni 1.00
+newmtl lambert4SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd hujing.jpg
+bump hujing_bump.jpg -bm 0.03
+Ni 1.00
+newmtl shenlan_eye_lambert3SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
