@@ -4,7 +4,7 @@ import Camera from '../../Camera';
 import {gl} from '../../globals';
 import ShaderProgram, {Shader} from './ShaderProgram';
 import PostProcess from './PostProcess'
-import Square from '../../geometry/Square';
+// import Square from '../../geometry/Square';
 
 
 class OpenGLRenderer {
@@ -230,6 +230,9 @@ class OpenGLRenderer {
     gbProg.setTime(this.currentTime);
 
     for (let drawable of drawables) {
+      // let a = vec3.fromValues(drawable.center[0], );
+      let a = vec3.fromValues(drawable.center[0], drawable.center[1], drawable.center[2]);
+      gbProg.setCenter(a);
       gbProg.draw(drawable);
     }
 

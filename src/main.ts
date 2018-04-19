@@ -9,6 +9,7 @@ import {setGL} from './globals';
 import {readTextFile} from './globals';
 import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
 import Texture from './rendering/gl/Texture';
+import Terrian from './geometry/Terrian'
 
 // Define an object with application parameters and button callbacks
 // const controls = {
@@ -16,14 +17,17 @@ import Texture from './rendering/gl/Texture';
 // };
 
 let square: Square;
+let terrian: Terrian;
 
 // TODO: replace with your scene's stuff
 
 let obj0: string;
 let mesh0: Mesh;
+let mesh1: Mesh;
+let mesh2: Mesh;
 
 let tex0: Texture;
-
+let noiseTex: Texture;
 
 var timer = {
   deltaTime: 0.0,
@@ -40,20 +44,32 @@ var timer = {
 
 function loadOBJText() {
   obj0 = readTextFile('../resources/obj/fish4.obj')
+  
 }
 
 
 function loadScene() {
   square && square.destroy();
   mesh0 && mesh0.destroy();
+  terrian && terrian.destroy();
 
-  square = new Square(vec3.fromValues(0, 0, 0));
-  square.create();
+  // square = new Square(vec3.fromValues(0, 0, 0));
+  // square.create();
+  terrian = new Terrian(vec3.fromValues(0, 0, 0));
+  terrian.create();
 
   mesh0 = new Mesh(obj0, vec3.fromValues(0, 0, 0));
   mesh0.create();
 
-  tex0 = new Texture('../resources/obj/hujing.jpg')
+  mesh1 = new Mesh(obj0, vec3.fromValues(5, 5, 0));
+  mesh1.create();
+
+  mesh2 = new Mesh(obj0, vec3.fromValues(10, 10, 5));
+  mesh2.create();
+
+  tex0 = new Texture('../resources/obj/hujing.jpg');
+  // tex0 = new Texture('../resources/textures/perlinnoise.png');
+  // noiseTex = new Texture('../resources/obj/perlinnoise.png');
 }
 
 
@@ -94,6 +110,7 @@ function main() {
     ]);
 
   standardDeferred.setupTexUnits(["tex_Color"]);
+  // standardDeferred.setupTexUnits(["tex_Noise"]);
 
   function tick() {
     camera.update();
@@ -103,13 +120,13 @@ function main() {
     renderer.updateTime(timer.deltaTime, timer.currentTime);
 
     standardDeferred.bindTexToUnit("tex_Color", tex0, 0);
-
+    // standardDeferred.bindTexToUnit("tex_Noise", noiseTex, 1);
     renderer.clear();
     renderer.clearGB();
 
     // TODO: pass any arguments you may need for shader passes
     // forward render mesh info into gbuffers
-    renderer.renderToGBuffer(camera, standardDeferred, [mesh0]);
+    renderer.renderToGBuffer(camera, standardDeferred, [mesh0, mesh1, mesh2]);
     // render from gbuffers into 32-bit color buffer
     renderer.renderFromGBuffer(camera);
     // apply 32-bit post and tonemap from 32-bit color to 8-bit color

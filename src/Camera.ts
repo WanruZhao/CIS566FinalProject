@@ -17,7 +17,7 @@ class Camera {
   constructor(position: vec3, target: vec3) {
     this.controls = CameraControls(document.getElementById('canvas'), {
       eye: position,
-      center: target,
+      position: target,
     });
     this.controls.mode = 'turntable';
     vec3.add(this.target, this.position, this.direction);

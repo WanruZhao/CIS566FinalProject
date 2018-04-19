@@ -27,6 +27,7 @@ class Square extends Drawable {
                                      1, -1, 0, 1,
                                      1, 1, 0, 1,
                                      -1, 1, 0, 1]);
+                                
   this.colors = new Float32Array([
     1.0, 0.5, 0.5, 1.0,
     1.0, 0.5, 0.5, 1.0,

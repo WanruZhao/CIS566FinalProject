@@ -1,19 +1,23 @@
 import {gl} from '../../globals';
-
+import {vec4} from 'gl-matrix';
 abstract class Drawable {
   count: number = 0;
 
+  center: vec4;
   bufIdx: WebGLBuffer;
   bufPos: WebGLBuffer;
   bufNor: WebGLBuffer;
   bufCol: WebGLBuffer;
   bufUV: WebGLBuffer;
+  bufType: WebGLBuffer;
+
 
   idxBound: boolean = false;
   posBound: boolean = false;
   norBound: boolean = false;
   colBound: boolean = false;
   uvBound: boolean = false;
+  typeBound: boolean = false;
 
   abstract create() : void;
 
@@ -23,6 +27,7 @@ abstract class Drawable {
     gl.deleteBuffer(this.bufNor);
     gl.deleteBuffer(this.bufCol);
     gl.deleteBuffer(this.bufUV);
+    gl.deleteBuffer(this.bufType);
   }
 
   generateIdx() {
@@ -48,6 +53,11 @@ abstract class Drawable {
   generateUV() {
     this.uvBound = true;
     this.bufUV = gl.createBuffer();
+  }
+
+  generateType() {
+    this.typeBound = true;
+    this.bufType = gl.createBuffer();
   }
 
   bindIdx(): boolean {
@@ -83,6 +93,14 @@ abstract class Drawable {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.bufUV);
     }
     return this.uvBound;
+  }
+
+  bindType() : boolean {
+    if (this.typeBound) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.bufUV);
+    }
+    return this.typeBound;
+    
   }
 
   elemCount(): number {
