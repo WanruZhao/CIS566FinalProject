@@ -26,6 +26,7 @@ void main() {
 	vec4 gb2 = texture(u_gb2, fs_UV);
 
 	vec3 col = gb2.xyz;
+
 	
 	float back = texture(u_gb1, fs_UV).x;
 	
@@ -51,4 +52,5 @@ void main() {
 	if(texture(u_gb1, fs_UV).x > 0.5) term = 1.0;
 
 	out_Col = vec4(col , 1.0);
+
 }

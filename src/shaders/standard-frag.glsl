@@ -79,8 +79,16 @@ void main() {
     col = pow(col, vec3(2.2));
     // col = vec3(sin(u_Time/100.0), 0.0, 0.0);
 
+<<<<<<< HEAD
     fragColor[0] = vec4(vec3(fs_WorldNor), fs_Pos.z);
     fragColor[1] = vec4(1.0); //fs_WorldNor;
     fragColor[2] = vec4(col, texture(tex_Color, fs_UV).W);
     // fragColor[2] = fs_Col;
+=======
+	float z_buffer = fs_Pos.z;
+	z_buffer = abs(z_buffer / (100.0 - 0.1));
+    fragColor[0] = vec4(0.0);
+    fragColor[1] = vec4(0.0);
+    fragColor[2] = vec4(col, z_buffer);
+>>>>>>> origin/xyl
 }
