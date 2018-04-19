@@ -7,6 +7,7 @@ uniform mat4 u_ModelInvTr;
 uniform mat4 u_View;   
 uniform mat4 u_Proj; 
 uniform float u_Time;
+uniform vec3 u_Center;
 
 in vec4 vs_Pos;
 in vec4 vs_Nor;
@@ -74,7 +75,7 @@ void main()
     fs_UV = vs_UV;
     fs_UV.y = 1.0 - fs_UV.y;
 
-    vec4 pos = vs_Pos + vec4(0, )
+
 
     // fragment info is in view space
     mat3 invTranspose = mat3(u_ModelInvTr);
@@ -144,5 +145,5 @@ void main()
     fs_Pos = u_View * u_Model * worldPos;
 
     
-    gl_Position = u_Proj * u_View * u_Model * vs_Pos;
+    gl_Position = u_Proj * u_View * u_Model * worldPos;
 }

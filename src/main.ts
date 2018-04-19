@@ -147,7 +147,7 @@ function main() {
     renderer.renderFromGBuffer(camera);
 
 
-    // renderer.renderCloudLayer(tex1, camera);
+    renderer.renderCloudLayer(tex1, camera);
 
 
 
