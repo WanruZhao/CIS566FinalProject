@@ -30,7 +30,7 @@ class Mesh extends Drawable {
 
     //posTemp = loadedMesh.vertices;
     for (var i = 0; i < loadedMesh.vertices.length; i++) {
-      posTemp.push(loadedMesh.vertices[i]);
+      posTemp.push(loadedMesh.vertices[i] + this.center[i % 3]);
       if (i % 3 == 2) posTemp.push(1.0);
     }
 

@@ -1,10 +1,11 @@
-import {mat4, vec4, vec3} from 'gl-matrix';
+import {vec2, mat4, vec4, vec3} from 'gl-matrix';
 import Drawable from './Drawable';
 import Camera from '../../Camera';
 import {gl} from '../../globals';
 import ShaderProgram, {Shader} from './ShaderProgram';
 import PostProcess from './PostProcess'
 import Square from '../../geometry/Square';
+import { Texture } from './Texture';
 
 
 class OpenGLRenderer {
@@ -43,6 +44,17 @@ class OpenGLRenderer {
     new Shader(gl.FRAGMENT_SHADER, require('../../shaders/tonemap-frag.glsl'))
     );
 
+  cloudPass : PostProcess = new PostProcess(
+    new Shader(gl.FRAGMENT_SHADER, require('../../shaders/cloud-frag.glsl'))
+  );
+
+  copyPass : PostProcess = new PostProcess(
+    new Shader(gl.FRAGMENT_SHADER, require('../../shaders/copy-frag.glsl'))
+  );
+
+  blurPass : PostProcess = new PostProcess(
+    new Shader(gl.FRAGMENT_SHADER, require('../../shaders/blur-frag.glsl'))
+  );
 
   add8BitPass(pass: PostProcess) {
     this.post8Passes.push(pass);
@@ -52,6 +64,8 @@ class OpenGLRenderer {
   add32BitPass(pass: PostProcess) {
     this.post32Passes.push(pass);
   }
+
+  
 
 
   constructor(public canvas: HTMLCanvasElement) {
@@ -66,10 +80,10 @@ class OpenGLRenderer {
     this.post32Passes = [];
 
     // TODO: these are placeholder post shaders, replace them with something good
-    this.add8BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost-frag.glsl'))));
-    this.add8BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost2-frag.glsl'))));
+    // this.add8BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost-frag.glsl'))));
+    // this.add8BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost2-frag.glsl'))));
 
-    this.add32BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost3-frag.glsl'))));
+    // this.add32BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/cloud-frag.glsl'))));
 
     if (!gl.getExtension("OES_texture_float_linear")) {
       console.error("OES_texture_float_linear not available");
@@ -211,7 +225,10 @@ class OpenGLRenderer {
   renderToGBuffer(camera: Camera, gbProg: ShaderProgram, drawables: Array<Drawable>) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.gBuffer);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    gl.enable(gl.DEPTH_TEST);
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     let model = mat4.create();
     let viewProj = mat4.create();
@@ -258,6 +275,41 @@ class OpenGLRenderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
+  renderCloudLayer(texture : Texture, cam : Camera) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[1]);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // this.cloudPass.bindTexToUnit("u_frame", texture, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    texture.bindTex();
+
+    this.cloudPass.setTime(this.currentTime);
+    this.cloudPass.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
+    this.cloudPass.setFar(cam.far);
+    this.cloudPass.setEye(vec4.fromValues(cam.position[0], cam.position[1], cam.position[2], 1.0));
+    this.cloudPass.draw();
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[1]);
+    this.copyPass.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
+    this.copyPass.draw();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+
+  }
+
 
   // TODO: pass any info you need as args
   renderPostProcessHDR() {
@@ -283,6 +335,8 @@ class OpenGLRenderer {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[(i) % 2]);
 
+      this.post32Passes[i].setTime(this.currentTime);
+      this.post32Passes[i].setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
       this.post32Passes[i].draw();
 
       // bind default frame buffer
