@@ -24,6 +24,6 @@ void main() {
 
 	vec3 col = gb2.xyz;
 	col = gb2.xyz;
-
-	out_Col = vec4(col, 1.0);
+	float z_buffer = gb2.w;
+	out_Col = vec4(vec3(z_buffer), 1.0);
 }

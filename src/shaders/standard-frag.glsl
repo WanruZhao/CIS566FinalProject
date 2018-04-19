@@ -78,7 +78,9 @@ void main() {
     col = pow(col, vec3(2.2));
     // col = vec3(sin(u_Time/100.0), 0.0, 0.0);
 
+	float z_buffer = fs_Pos.z;
+	z_buffer = abs(z_buffer / (100.0 - 0.1));
     fragColor[0] = vec4(0.0);
     fragColor[1] = vec4(0.0);
-    fragColor[2] = vec4(col, 1.0);
+    fragColor[2] = vec4(col, z_buffer);
 }

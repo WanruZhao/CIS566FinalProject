@@ -97,7 +97,7 @@ void main()
 
 
     float m_Noise = noise(u_Center);
-    float x_time = 3.0 * m_Noise * ((worldPos.z - 8.0) + 3.0) / 40.0 * sin(worldPos.z/ 20.0 + 5.0 * u_Time / 2.0) / 2.0 + 1.0;
+    float x_time = (sin(m_Noise) + 1.0) * ((worldPos.z - 8.0) + 3.0) / 40.0 * sin(worldPos.z/ 20.0 + 5.0 * u_Time / 2.0) / 2.0 + 1.0;
     mat4 rotX = mat4(0.0);
     rotX[1][1] = cos(x_time);
     rotX[1][2] = -sin(x_time);
