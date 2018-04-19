@@ -1,4 +1,4 @@
-import {vec2, vec4, mat4} from 'gl-matrix';
+import {vec2, vec3, vec4, mat4} from 'gl-matrix';
 import Drawable from './Drawable';
 import Texture from './Texture';
 import {gl} from '../../globals';
@@ -39,6 +39,8 @@ class ShaderProgram {
   unifFar : WebGLUniformLocation;
   unifViewProjInv : WebGLUniformLocation;
   unifEye : WebGLUniformLocation;
+  unifCenter: WebGLUniformLocation;
+
 
   unifTexUnits: Map<string, WebGLUniformLocation>;
 
@@ -69,6 +71,8 @@ class ShaderProgram {
     this.unifDimension = gl.getUniformLocation(this.prog, "u_Dimension");
     this.unifFar = gl.getUniformLocation(this.prog, "u_Far");
     this.unifEye = gl.getUniformLocation(this.prog, "u_Eye");
+    this.unifCenter = gl.getUniformLocation(this.prog, "u_Center");
+
     this.unifTexUnits = new Map<string, WebGLUniformLocation>();
   }
 
@@ -163,6 +167,7 @@ class ShaderProgram {
     }
   }
 
+
   setDimension(d : vec2) {
     this.use();
     if(this.unifDimension !== -1) {
@@ -181,6 +186,15 @@ class ShaderProgram {
     this.use();
     if(this.unifEye !== -1) {
       gl.uniform4fv(this.unifEye, e);
+    }
+  }
+
+  setCenter(center: vec3)
+  {
+    this.use();
+    if(this.unifCenter !== -1){
+      gl.uniform3fv(this.unifCenter, center);
+
     }
   }
 

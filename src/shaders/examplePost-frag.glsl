@@ -9,5 +9,7 @@ uniform float u_Time;
 
 // Interpolation between color and greyscale over time on left half of screen
 void main() {
+
 	out_Col = texture(u_frame, fs_UV);
+
 }

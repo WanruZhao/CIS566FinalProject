@@ -8,6 +8,7 @@ import Square from '../../geometry/Square';
 import { Texture } from './Texture';
 
 
+
 class OpenGLRenderer {
   gBuffer: WebGLFramebuffer; // framebuffer for deferred rendering
 
@@ -225,9 +226,10 @@ class OpenGLRenderer {
   renderToGBuffer(camera: Camera, gbProg: ShaderProgram, drawables: Array<Drawable>) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.gBuffer);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    gl.disable(gl.DEPTH_TEST);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.enable(gl.DEPTH_TEST);
+    // gl.disable(gl.DEPTH_TEST);
+    // gl.enable(gl.BLEND);
+    // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     let model = mat4.create();
@@ -247,6 +249,9 @@ class OpenGLRenderer {
     gbProg.setTime(this.currentTime);
 
     for (let drawable of drawables) {
+      // let a = vec3.fromValues(drawable.center[0], );
+      let a = vec3.fromValues(drawable.center[0], drawable.center[1], drawable.center[2]);
+      gbProg.setCenter(a);
       gbProg.draw(drawable);
     }
 

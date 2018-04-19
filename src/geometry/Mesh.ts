@@ -9,7 +9,6 @@ class Mesh extends Drawable {
   normals: Float32Array;
   colors: Float32Array;
   uvs: Float32Array;
-  center: vec4;
 
   objString: string;
 
@@ -30,8 +29,10 @@ class Mesh extends Drawable {
 
     //posTemp = loadedMesh.vertices;
     for (var i = 0; i < loadedMesh.vertices.length; i++) {
-      posTemp.push(loadedMesh.vertices[i] + this.center[i % 3]);
-      if (i % 3 == 2) posTemp.push(1.0);
+      // posTemp.push(loadedMesh.vertices[i] + this.center[i % 3]);
+      posTemp.push(loadedMesh.vertices[i]);
+      if (i % 3 == 2) posTemp.push(1.0)
+
     }
 
     for (var i = 0; i < loadedMesh.vertexNormals.length; i++) {
