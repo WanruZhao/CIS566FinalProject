@@ -1,6 +1,9 @@
 #version 300 es
 precision highp float;
 
+#define FISH 0
+#define TERRIAN 1
+
 in vec4 fs_Pos;
 in vec4 fs_Nor;
 in vec4 fs_Col;
@@ -9,6 +12,7 @@ in vec4 fs_WorldNor;
 
 uniform float u_Time;
 uniform vec3 u_Center;
+uniform int u_Type;
 out vec4 fragColor[3]; // The data in the ith index of this array of outputs
                        // is passed to the ith index of OpenGLRenderer's
                        // gbTargets array, which is an array of textures.
@@ -19,6 +23,8 @@ out vec4 fragColor[3]; // The data in the ith index of this array of outputs
 uniform sampler2D tex_Color;
 uniform sampler2D tex_Noise;
 
+const float NEAR = 0.1;
+const float FAR = 100.0;
 float hash(float n) { return fract(sin(n) * 1e4); }
 float hash(vec2 p) { return fract(1e4 * sin(17.0 * p.x + p.y * 0.1) * (0.1 + abs(sin(p.y * 13.0 + p.x)))); }
 
@@ -68,21 +74,49 @@ float noise(vec3 x) {
                    mix( hash(n + dot(step, vec3(0, 1, 1))), hash(n + dot(step, vec3(1, 1, 1))), u.x), u.y), u.z);
 }
 
+
+float LinearizeDepth(float d)
+{
+	float z = d * 2.0 - 1.0;
+	return (2.0 * NEAR * FAR)/(FAR + NEAR - z * (FAR-NEAR));
+}
 void main() {
     // TODO: pass proper data into gbuffers
     // Presently, the provided shader passes "nothing" to the first
     // two gbuffers and basic color to the third.
+	int inType = u_Type;
+	vec3 col = vec3(0.0);	
+	switch (inType)
+	{
+		case FISH:
+		{
+			col = texture(tex_Color, fs_UV).rgb;
+		}break;
+		case TERRIAN:
+		{
+			//col = texture(tex_Noise, fs_UV).rgb;
+			col = vec3(1.0);
+		}break;
+		default:
+		{
 
-    vec3 col = texture(tex_Color, fs_UV).rgb;
+		}
+		break;
+	}
+    
 
     // if using textures, inverse gamma correct
     col = pow(col, vec3(2.2));
-    // col = vec3(sin(u_Time/100.0), 0.0, 0.0);
 
-	float z_buffer = fs_Pos.z;
-	z_buffer = abs(z_buffer / (100.0 - 0.1));
-    fragColor[0] = vec4(0.0);
-    fragColor[1] = vec4(0.0);
-    fragColor[2] = vec4(col, z_buffer);
+	float z_buffer = LinearizeDepth(gl_FragCoord.z);
+	// z_buffer = abs(z_buffer / (100.0 - 0.1));
+	// 32 bit: normal and z_buffer
+    fragColor[0] = vec4(normalize(fs_Nor).xyz, z_buffer);
+
+	// 8 bit camera space positions
+    fragColor[1] = fs_Pos;
+
+	// 8 bit: color 
+    fragColor[2] = vec4(col, 1.0);
 
 }

@@ -40,7 +40,8 @@ class ShaderProgram {
   unifViewProjInv : WebGLUniformLocation;
   unifEye : WebGLUniformLocation;
   unifCenter: WebGLUniformLocation;
-
+  unifType: WebGLUniformLocation;
+  unifSSAOSamples: WebGLUniformLocation;
 
   unifTexUnits: Map<string, WebGLUniformLocation>;
 
@@ -72,6 +73,9 @@ class ShaderProgram {
     this.unifFar = gl.getUniformLocation(this.prog, "u_Far");
     this.unifEye = gl.getUniformLocation(this.prog, "u_Eye");
     this.unifCenter = gl.getUniformLocation(this.prog, "u_Center");
+    this.unifType = gl.getUniformLocation(this.prog, "u_Type");
+    this.unifSSAOSamples = gl.getUniformLocation(this.prog, "u_Samples");
+
 
     this.unifTexUnits = new Map<string, WebGLUniformLocation>();
   }
@@ -197,7 +201,24 @@ class ShaderProgram {
 
     }
   }
+  
+  setType(type: number)
+  {
+    this.use();
+    if(this.unifType !== -1)
+    {
+      gl.uniform1i(this.unifType, type);
+    }
+  }
 
+  setSSAOSamples(s:Float32Array)
+  {
+    this.use();
+    if(this.unifSSAOSamples !== -1)
+    {
+      gl.uniform3fv(this.unifSSAOSamples, s);
+    }
+  }
   draw(d: Drawable) {
     this.use();
 

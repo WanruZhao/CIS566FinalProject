@@ -8,11 +8,11 @@ class Terrian extends Drawable{
     normals: Float32Array;
     colors: Float32Array;
     uvs: Float32Array;
-    center: vec4;
 
-    constructor(center: vec3){
+    constructor(center: vec3, inType: number){
         super();
         this.center = vec4.fromValues(center[0], center[1], center[2], 1);
+        this.type = inType;
     }
     
     create()

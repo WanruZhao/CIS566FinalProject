@@ -6,7 +6,8 @@ import ShaderProgram, {Shader} from './ShaderProgram';
 import PostProcess from './PostProcess'
 import Square from '../../geometry/Square';
 import { Texture } from './Texture';
-
+import { getPackedSettings } from 'http2';
+// import { normalize } from 'gl-matrix/src/gl-matrix/vec2';
 
 
 class OpenGLRenderer {
@@ -17,7 +18,7 @@ class OpenGLRenderer {
                              // gbTargets[0] to store 32-bit values, while the rest
                              // of the array stores 8-bit values. You can modify
                              // this if you want more 32-bit storage.
-
+  gbNoiseTexture: WebGLTexture;
   depthTexture: WebGLTexture; // You don't need to interact with this, it's just
                               // so the OpenGL pipeline can do depth sorting
 
@@ -97,11 +98,12 @@ class OpenGLRenderer {
     var gb0loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb0");
     var gb1loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb1");
     var gb2loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb2");
-
+    var gbNoise = gl.getUniformLocation(this.deferredShader.prog, "u_SSAONoise");
     this.deferredShader.use();
     gl.uniform1i(gb0loc, 0);
     gl.uniform1i(gb1loc, 1);
     gl.uniform1i(gb2loc, 2);
+    gl.uniform1i(gbNoise, 3);
   }
 
 
@@ -138,6 +140,31 @@ class OpenGLRenderer {
 
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, this.gbTargets[i], 0);
     }
+
+
+    // SSAO Noise texture
+    
+   let ssaoNoiseData: Array<number> = [];
+    for(let i = 0; i < 16; i++){
+      // let noise = vec3.fromValues(Math.random() * 2.0 - 1.0,
+      //                             Math.random() * 2.0 - 1.0,
+      //                             0.0);
+      ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
+      ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
+      ssaoNoiseData.push(0.0);
+    }   
+    const ssaoNoise = new Float32Array(ssaoNoiseData);
+    this.gbNoiseTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.gbNoiseTexture);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, 4, 4, 0, gl.RGB, gl.FLOAT,ssaoNoise);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+
+
     // depth attachment
     this.depthTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
@@ -248,10 +275,45 @@ class OpenGLRenderer {
 
     gbProg.setTime(this.currentTime);
 
+
+    // let ssaoNoiseData: Array<number> = [];
+    // for(let i = 0; i < 16; i++){
+    //   // let noise = vec3.fromValues(Math.random() * 2.0 - 1.0,
+    //   //                             Math.random() * 2.0 - 1.0,
+    //   //                             0.0);
+    //   ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
+    //   ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
+    //   ssaoNoiseData.push(0.0);
+    // }   
+    // const ssaoNoise = new Float32Array(ssaoNoiseData);
+
+    let ssaoKernel : Array<number> = [];
+    
+    for( let i = 0; i < 64; ++i)
+    {
+      let ssaoSample = vec3.fromValues(Math.random() * 2.0 - 1.0,
+                                       Math.random() * 2.0 - 1.0,
+                                       Math.random());
+      let  l =    Math.sqrt(ssaoSample[0]*ssaoSample[0] + ssaoSample[1]*ssaoSample[1] + ssaoSample[2]*ssaoSample[2]);  
+      let temp = Math.random();                                              
+      ssaoSample = vec3.fromValues(ssaoSample[0]*temp  / l, ssaoSample[1]*temp / l, ssaoSample[2]*temp / l);
+      let ssaoScale = i / 64.0;
+      ssaoScale = 0.1 + ssaoScale * ssaoScale * (1.0 - 0.1);
+      ssaoSample = vec3.fromValues(ssaoSample[0]*ssaoScale, ssaoSample[1]*ssaoScale, ssaoSample[2]*ssaoScale,);
+      ssaoKernel.push(ssaoSample[0]);
+      ssaoKernel.push(ssaoSample[1]);
+      ssaoKernel.push(ssaoSample[2]);
+    }
+
+    const ssaoKernelData = new Float32Array(ssaoKernel);
+    gbProg.setSSAOSamples(ssaoKernelData);
+    
     for (let drawable of drawables) {
       // let a = vec3.fromValues(drawable.center[0], );
       let a = vec3.fromValues(drawable.center[0], drawable.center[1], drawable.center[2]);
+      let inType = drawable.type;
       gbProg.setCenter(a);
+      gbProg.setType(inType);
       gbProg.draw(drawable);
     }
 
@@ -260,7 +322,7 @@ class OpenGLRenderer {
   }
 
   renderFromGBuffer(camera: Camera) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
@@ -275,6 +337,9 @@ class OpenGLRenderer {
       gl.activeTexture(gl.TEXTURE0 + i);
       gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[i]);
     }
+    
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, this.gbNoiseTexture);
 
     this.deferredShader.draw();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);

@@ -4,6 +4,7 @@ abstract class Drawable {
   count: number = 0;
 
   center: vec4;
+  type: number;
   bufIdx: WebGLBuffer;
   bufPos: WebGLBuffer;
   bufNor: WebGLBuffer;

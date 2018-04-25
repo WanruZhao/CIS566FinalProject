@@ -32,7 +32,6 @@ let tex1: Texture;
 let meshes : Mesh[];
 let cloud : Cloud;
 
-
 let mesh1: Mesh;
 let mesh2: Mesh;
 
@@ -64,10 +63,10 @@ function loadScene() {
   // square.create();
 
 
-  mesh0 = new Mesh(obj0, vec3.fromValues(0, 0, 0));
+  mesh0 = new Mesh(obj0, vec3.fromValues(0, 0, 0), 0);
   mesh0.create();
 
-  terrian = new Terrian(vec3.fromValues(0.0, 0.0, 0.0));
+  terrian = new Terrian(vec3.fromValues(0.0, 0.0, 0.0), 1);
   terrian.create();
 
   cloud = new Cloud(vec3.fromValues(0,0,0), vec3.fromValues(10,3,10), vec3.fromValues(0,0,0), 5);
@@ -75,7 +74,7 @@ function loadScene() {
 
 
   // tex0 = new Texture('../resources/textures/noiset.png');
-  tex1 = new Texture('../resources/textures/uniform-noise.jpg');
+  // tex1 = new Texture('../resources/textures/uniform-noise.jpg');
 
   // mesh1 = new Mesh(obj0, vec3.fromValues(5, 5, 0));
   // mesh1.create();
@@ -83,8 +82,8 @@ function loadScene() {
   // mesh2 = new Mesh(obj0, vec3.fromValues(10, 10, 5));
   // mesh2.create();
 
-  //tex0 = new Texture('../resources/obj/hujing.jpg');
-   tex0 = new Texture('../resources/textures/perlinnoise.png');
+   tex0 = new Texture('../resources/obj/hujing.jpg');
+   tex1 = new Texture('../resources/textures/perlinnoise.png');
   // noiseTex = new Texture('../resources/obj/perlinnoise.png');
 
 }
@@ -127,7 +126,7 @@ function main() {
     ]);
 
   standardDeferred.setupTexUnits(["tex_Color"]);
-  // standardDeferred.setupTexUnits(["tex_Noise"]);
+  standardDeferred.setupTexUnits(["tex_Noise"]);
 
   function tick() {
     camera.update();
@@ -137,14 +136,14 @@ function main() {
     renderer.updateTime(timer.deltaTime, timer.currentTime);
 
     standardDeferred.bindTexToUnit("tex_Color", tex0, 0);
-    // standardDeferred.bindTexToUnit("tex_Noise", noiseTex, 1);
+    standardDeferred.bindTexToUnit("tex_Noise", tex1, 1);
     renderer.clear();
     renderer.clearGB();
 
     // TODO: pass any arguments you may need for shader passes
     // forward render mesh info into gbuffers
 
-    renderer.renderToGBuffer(camera, standardDeferred, [mesh0]);
+    renderer.renderToGBuffer(camera, standardDeferred, [mesh0, terrian]);
 
     // render from gbuffers into 32-bit color buffer
     renderer.renderFromGBuffer(camera);
@@ -155,9 +154,9 @@ function main() {
 
 
     // apply 32-bit post and tonemap from 32-bit color to 8-bit color
-    renderer.renderPostProcessHDR();
+    // renderer.renderPostProcessHDR();
     // apply 8-bit post and draw
-    renderer.renderPostProcessLDR();
+    // renderer.renderPostProcessLDR();
 
     stats.end();
     requestAnimationFrame(tick);
