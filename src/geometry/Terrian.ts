@@ -18,25 +18,35 @@ class Terrian extends Drawable{
     create()
     {
         this.indices = new Uint32Array([0, 1, 2,
-                                        0, 2, 3]);
+                                        0, 2, 3,
+                                        2, 3, 5,
+                                        3, 4, 5]);
         this.normals = new Float32Array([0, 1, 0, 0,
                                          0, 1, 0, 0,
                                          0, 1, 0, 0,
+                                         0, 1, 0, 0,
+                                         0, 1, 0, 0,
                                          0, 1, 0, 0]); 
-        this.positions = new Float32Array([1, 0, 1, 1,
-                                           1, 0, -1, 1,
-                                          -1, 0, -1, 1,
-                                          -1, 0, 1, 1]); 
+        this.positions = new Float32Array([5, 0, 5, 1,
+                                           5, 0, -5, 1,
+                                           0, 0, -5, 1,
+                                           0, 0, 5, 1,
+                                          -5, 0, 5, 1,
+                                          -5, 0, -5, 1]); 
         
         this.colors = new Float32Array([1.0, 0.5, 0.5, 1.0,
+                                        1.0, 0.5, 0.5, 1.0,
+                                        1.0, 0.5, 0.5, 1.0,
                                         1.0, 0.5, 0.5, 1.0,
                                         1.0, 0.5, 0.5, 1.0,
                                         1.0, 0.5, 0.5, 1.0
                                         ]);   
         this.uvs = new Float32Array([0, 0,
                                      1, 0,
-                                     1, 1,
-                                     0, 1]);      
+                                     1, 0.5,
+                                     0, 0.5,
+                                     0, 1,
+                                     1, 1]);      
         
         this.generateIdx();
         this.generatePos();

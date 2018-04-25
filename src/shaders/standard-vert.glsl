@@ -81,12 +81,102 @@ void main()
     mat3 invTranspose = mat3(u_ModelInvTr);
     mat3 view = mat3(u_View);
     fs_Nor = vec4(view * invTranspose * vec3(vs_Nor), 0);
-    vec4 worldPos = vs_Pos;
-    // worldPos.x += 5.0 * sin(u_Time / 2.0);
+    // vec4 worldPos = vs_Pos;
+    // // worldPos.x += 5.0 * sin(u_Time / 2.0);
 
 
-    float m_Noise = noise(u_Center);
-    float x_time = 3.0 * ((worldPos.z - 8.0) + 3.0) / 40.0 * sin(worldPos.z/ 20.0 + 5.0 * u_Time / 2.0) / 2.0 + 1.0;
+    // float m_Noise = noise(u_Center);
+    // float x_time = 3.0 * ((worldPos.z - 8.0) + 3.0) / 40.0 * sin(worldPos.z/ 20.0 + 5.0 * u_Time / 2.0) / 2.0 + 1.0;
+    // mat4 rotX = mat4(0.0);
+    // rotX[1][1] = cos(x_time);
+    // rotX[1][2] = -sin(x_time);
+    // rotX[2][1] = sin(x_time);
+    // rotX[2][2] = cos(x_time);
+    // rotX[0][0] = 1.0;
+    // rotX[3][3] = 1.0;
+    // rotX = transpose(rotX);
+
+    // // rotY along y axis
+    // float y_time = 0.5 * sin(u_Time / 5.0);
+    // mat4 rotY = mat4(0.0);
+    // rotY[0][0] = cos(y_time);
+    // rotY[0][2] = sin(y_time);
+    // rotY[2][0] = -sin(y_time);
+    // rotY[2][2] = cos(y_time);
+    // rotY[1][1] = 1.0;
+    // rotY[3][3] = 1.0;
+    // rotY = transpose(rotY);
+    
+    // // rotZ along z axis
+    // float z_time = sin(u_Time * 2.5) / 15.0;
+    // mat4 rotZ = mat4(0.0);
+    // rotZ[0][0] = cos(z_time);
+    // rotZ[0][1] = -sin(z_time);
+    // rotZ[1][0] = sin(z_time);
+    // rotZ[1][1] = cos(z_time);
+    // rotZ[2][2] = 1.0;
+    // rotZ[3][3] = 1.0;
+    // rotZ = transpose(rotZ);
+
+    // mat4 tra = mat4(0.0);
+    // tra[0][0] = 1.0;
+    // tra[1][1] = 1.0;
+    // tra[2][2] = 1.0;
+    // tra[3][3] = 1.0;
+    // tra[0][3] = 5.0;
+    // tra[1][3] = 7.0;
+    // tra[2][3] = 2.0;
+    // tra = transpose(tra);
+    
+    // mat4 CenterTra = mat4(0.0);
+    // CenterTra[0][0] = 1.0;
+    // CenterTra[1][1] = 1.0;
+    // CenterTra[2][2] = 1.0;
+    // CenterTra[3][3] = 1.0;
+    // CenterTra[0][3] = u_Center[0] + 25.0 - 50.0 * fract(u_Time / 10.0);
+    // // CenterTra[0][3] = u_Center[0] + 25.0;
+    // CenterTra[1][3] = u_Center[1];
+    // CenterTra[2][3] = u_Center[2];
+    // CenterTra = transpose(CenterTra);
+
+    // float cameraRotXRad = -60.0 / 180.0 * 3.14159;
+    // mat4 cameraRotX = mat4(0.0);
+    // cameraRotX[1][1] = cos(cameraRotXRad);
+    // cameraRotX[1][2] = -sin(cameraRotXRad);
+    // cameraRotX[2][1] = sin(cameraRotXRad);
+    // cameraRotX[2][2] = cos(cameraRotXRad);
+    // cameraRotX[0][0] = 1.0;
+    // cameraRotX[3][3] = 1.0;
+    // cameraRotX = transpose(cameraRotX);
+
+    // float cameraRotYRad = -90.0 / 180.0 * 3.14159;
+    // mat4 cameraRotY = mat4(0.0);
+    // cameraRotY[0][0] = cos(cameraRotYRad);
+    // cameraRotY[0][2] = sin(cameraRotYRad);
+    // cameraRotY[2][0] = -sin(cameraRotYRad);
+    // cameraRotY[2][2] = cos(cameraRotYRad);
+    // cameraRotY[1][1] = 1.0;
+    // cameraRotY[3][3] = 1.0;
+    // cameraRotY = transpose(cameraRotY);
+
+    // float cameraRotZRad = 0.0 / 180.0 * 3.14159;
+    // mat4 cameraRotZ = mat4(0.0);
+    // cameraRotZ[0][0] = cos(cameraRotZRad);
+    // cameraRotZ[0][1] = -sin(cameraRotZRad);
+    // cameraRotZ[1][0] = sin(cameraRotZRad);
+    // cameraRotZ[1][1] = cos(cameraRotZRad);
+    // cameraRotZ[2][2] = 1.0;
+    // cameraRotZ[3][3] = 1.0;
+    // cameraRotZ = transpose(cameraRotZ);
+
+    // worldPos = CenterTra * cameraRotY * cameraRotX *  rotX * worldPos; 
+
+    // fs_Pos = u_View * u_Model * worldPos;
+    // gl_Position = u_Proj * u_View * u_Model * worldPos;
+// ========================== bird movements ===========================================//
+
+    vec4 birdPos = vec4(0.0);
+    float x_time = u_Time;
     mat4 rotX = mat4(0.0);
     rotX[1][1] = cos(x_time);
     rotX[1][2] = -sin(x_time);
@@ -94,85 +184,42 @@ void main()
     rotX[2][2] = cos(x_time);
     rotX[0][0] = 1.0;
     rotX[3][3] = 1.0;
-    rotX = transpose(rotX);
+   rotX = transpose(rotX);
 
-    // rotY along y axis
-    float y_time = 0.5 * sin(u_Time / 5.0);
-    mat4 rotY = mat4(0.0);
-    rotY[0][0] = cos(y_time);
-    rotY[0][2] = sin(y_time);
-    rotY[2][0] = -sin(y_time);
-    rotY[2][2] = cos(y_time);
-    rotY[1][1] = 1.0;
-    rotY[3][3] = 1.0;
-    rotY = transpose(rotY);
+    // mat4 rotX2 = mat4(0.0);
+    // rotX2[1][1] = cos(-x_time);
+    // rotX2[1][2] = -sin(-x_time);
+    // rotX2[2][1] = sin(-x_time);
+    // rotX2[2][2] = cos(-x_time);
+    // rotX2[0][0] = 1.0;
+    // rotX2[3][3] = 1.0;
     
-    // rotZ along z axis
-    float z_time = sin(u_Time * 2.5) / 15.0;
-    mat4 rotZ = mat4(0.0);
-    rotZ[0][0] = cos(z_time);
-    rotZ[0][1] = -sin(z_time);
-    rotZ[1][0] = sin(z_time);
-    rotZ[1][1] = cos(z_time);
-    rotZ[2][2] = 1.0;
-    rotZ[3][3] = 1.0;
-    rotZ = transpose(rotZ);
+   // rotX2 = transpose(rotX2);
+    //birdPos *= rotX;
 
-    mat4 tra = mat4(0.0);
-    tra[0][0] = 1.0;
-    tra[1][1] = 1.0;
-    tra[2][2] = 1.0;
-    tra[3][3] = 1.0;
-    tra[0][3] = 5.0;
-    tra[1][3] = 7.0;
-    tra[2][3] = 2.0;
-    tra = transpose(tra);
+    if(vs_Pos.z > 0.000005)
+    {
+        birdPos = rotX * vs_Pos;
+    }
+    else 
+    {
+        birdPos = vs_Pos;
+    }
+    // if(birdPos.x < 0.)
+    // {
+    //     birdPos *= rotX;
+    // }
+    // else
+    // {
+    // //     birdPos *= rotX2;
+    // }
+    // if(birdPos.z <= 0.0)
+    // {
+    //     birdPos *= rotX;
+    // }
     
-    mat4 CenterTra = mat4(0.0);
-    CenterTra[0][0] = 1.0;
-    CenterTra[1][1] = 1.0;
-    CenterTra[2][2] = 1.0;
-    CenterTra[3][3] = 1.0;
-    CenterTra[0][3] = u_Center[0] + 25.0 - 50.0 * fract(u_Time / 10.0);
-    // CenterTra[0][3] = u_Center[0] + 25.0;
-    CenterTra[1][3] = u_Center[1];
-    CenterTra[2][3] = u_Center[2];
-    CenterTra = transpose(CenterTra);
-
-    float cameraRotXRad = -60.0 / 180.0 * 3.14159;
-    mat4 cameraRotX = mat4(0.0);
-    cameraRotX[1][1] = cos(cameraRotXRad);
-    cameraRotX[1][2] = -sin(cameraRotXRad);
-    cameraRotX[2][1] = sin(cameraRotXRad);
-    cameraRotX[2][2] = cos(cameraRotXRad);
-    cameraRotX[0][0] = 1.0;
-    cameraRotX[3][3] = 1.0;
-    cameraRotX = transpose(cameraRotX);
-
-    float cameraRotYRad = -90.0 / 180.0 * 3.14159;
-    mat4 cameraRotY = mat4(0.0);
-    cameraRotY[0][0] = cos(cameraRotYRad);
-    cameraRotY[0][2] = sin(cameraRotYRad);
-    cameraRotY[2][0] = -sin(cameraRotYRad);
-    cameraRotY[2][2] = cos(cameraRotYRad);
-    cameraRotY[1][1] = 1.0;
-    cameraRotY[3][3] = 1.0;
-    cameraRotY = transpose(cameraRotY);
-
-    float cameraRotZRad = 0.0 / 180.0 * 3.14159;
-    mat4 cameraRotZ = mat4(0.0);
-    cameraRotZ[0][0] = cos(cameraRotZRad);
-    cameraRotZ[0][1] = -sin(cameraRotZRad);
-    cameraRotZ[1][0] = sin(cameraRotZRad);
-    cameraRotZ[1][1] = cos(cameraRotZRad);
-    cameraRotZ[2][2] = 1.0;
-    cameraRotZ[3][3] = 1.0;
-    cameraRotZ = transpose(cameraRotZ);
-
-    worldPos = CenterTra * cameraRotY * cameraRotX *  rotX * worldPos; 
-
-    fs_Pos = u_View * u_Model * worldPos;
 
     
-    gl_Position = u_Proj * u_View * u_Model * worldPos;
+    fs_Pos = u_View * u_Model * birdPos;
+    gl_Position = u_Proj * u_View * u_Model * birdPos;
 }
