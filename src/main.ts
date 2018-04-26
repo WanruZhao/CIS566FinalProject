@@ -19,22 +19,20 @@ import Terrian from './geometry/Terrian';
 // };
 
 let square: Square;
-let terrian: Terrian;
 // TODO: replace with your scene's stuff
 
 let obj0: string;
-let obj1: string;
+let myTerrian: string;
 
 let fishes: Mesh[];
 
 let mesh0: Mesh;
+let terrian: Mesh;
 
 let tex0: Texture;
 let tex1: Texture;
 let waterTex1: Texture;
 let waterTex2: Texture;
-
-let meshes : Mesh[];
 let cloud : Cloud;
 
 
@@ -55,7 +53,7 @@ var timer = {
 
 function loadOBJText() {
   obj0 = readTextFile('./resources/obj/fish4.obj')
-
+  myTerrian = readTextFile('./resources/obj/terrian.obj')
 }
 
 
@@ -77,9 +75,10 @@ function loadScene() {
     fishes.push(mesh0);
   }
 
-
-  terrian = new Terrian(vec3.fromValues(0.0, 0.0, 0.0), 1);
+  terrian = new Mesh(myTerrian, vec3.fromValues(0, 0, 0), 1);
   terrian.create();
+  fishes.push(terrian);
+
 
   cloud = new Cloud(vec3.fromValues(0,0,0), vec3.fromValues(10,3,10), vec3.fromValues(0,0,0), 5);
   cloud.create();

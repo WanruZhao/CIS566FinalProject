@@ -1,6 +1,10 @@
 #version 300 es
 precision highp float;
 
+
+#define FISH 0
+#define TERRIAN 1
+
 uniform mat4 u_Model;
 uniform mat4 u_ModelInvTr;  
 
@@ -8,7 +12,6 @@ uniform mat4 u_View;
 uniform mat4 u_Proj; 
 uniform float u_Time;
 uniform vec3 u_Center;
-
 in vec4 vs_Pos;
 in vec4 vs_Nor;
 in vec4 vs_Col;
@@ -76,7 +79,7 @@ void main()
     fs_UV = vs_UV;
     fs_UV.y = 1.0 - fs_UV.y;
 
-
+    
     float m_Noise = noise(u_Center);
     // fragment info is in view space
     mat3 invTranspose = mat3(u_ModelInvTr);
@@ -181,12 +184,30 @@ void main()
     scaleMatrix[3][3] = 1.0;
 
 
-    // worldPos = CenterTra * cameraRotY * cameraRotX * rotX * worldPos; 
-    worldPos =  CenterTra * cameraRotY * cameraRotX * rotX *  scaleMatrix * worldPos; 
+    // int inType = u_Type;
+    // switch(inType)
+    // {
+    //     case FISH:
+    //     {
+            worldPos =  CenterTra * cameraRotY * cameraRotX * rotX *  scaleMatrix * worldPos; 
 
-    fs_PosWorld = worldPos;
-    fs_Pos = u_View * u_Model * worldPos;
-    gl_Position = u_Proj * u_View * u_Model * worldPos;
+            fs_PosWorld = worldPos;
+            fs_Pos = u_View * u_Model * worldPos;
+            gl_Position = u_Proj * u_View * u_Model * worldPos;
+    //     } break;
+    //     case TERRIAN:
+    //     {
+    //         fs_PosWorld = vs_Pos;
+    //         fs_Pos = u_View * u_Model * vs_Pos;
+    //         gl_Position = u_Proj * u_View * u_Model * vs_Pos;
+    //     } break;
+    //     default:
+    //     {
+
+    //     }break;
+    // }
+    // worldPos = CenterTra * cameraRotY * cameraRotX * rotX * worldPos; 
+
 // ========================== bird movements ===========================================//
 
 //     vec4 birdPos = vec4(0.0);
