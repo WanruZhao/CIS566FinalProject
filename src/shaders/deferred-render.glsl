@@ -11,12 +11,16 @@ uniform sampler2D u_gb0;
 uniform sampler2D u_gb1;
 uniform sampler2D u_gb2;
 uniform sampler2D u_SSAONoise;
+uniform sampler2D u_Water1;
+uniform sampler2D u_Water2;
 uniform vec3 u_Samples[64];
 uniform mat4 u_View;
 uniform vec4 u_CamPos; 
 uniform mat4 u_ViewInv; 
 uniform vec2 u_Dimension;
 uniform mat4 u_Proj; 
+uniform float u_Time;
+
 
 const vec4 lightPos = vec4(100, 100, 0, 1); 
 
@@ -86,32 +90,9 @@ void main() {
 	float term = clamp(diffuseTerm, 0.0, 1.0) + ambientTerm;
 
 	if(texture(u_gb1, fs_UV).x > 0.5) term = 1.0;
-	col = col * term;
+	// col = col * term;
 
     // ==================== SSAO ======================//
-	// std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // 随机浮点数，范围0.0 - 1.0
-	// std::default_random_engine generator;
-	// std::vector<glm::vec3> ssaoKernel;
-	// for (GLuint i = 0; i < 64; ++i)
-	// {
-    // 	glm::vec3 sample(
-    //     randomFloats(generator) * 2.0 - 1.0, 
-    //     randomFloats(generator) * 2.0 - 1.0, 
-    //     randomFloats(generator)
-    // );
-    // sample = glm::normalize(sample);
-    // sample *= randomFloats(generator);
-    // GLfloat scale = GLfloat(i) / 64.0; 
-	// scale = lerp(0.1f, 1.0f, scale * scale);
-   	// sample *= scale;
-    // ssaoKernel.push_back(sample);  
-	// }
-
-
-	
-
-	
-
 	vec3 fragPos = texture(u_gb1, fs_UV).xyz;
 	vec3 ao_normal = texture(u_gb0, fs_UV).xyz;
 	float z_buffer = texture(u_gb0, fs_UV).w / (100.0 - 0.1);
@@ -135,32 +116,21 @@ void main() {
 	}
 	
 	occlusion = 1.0 - (occlusion / 64.0);
-	// for(int i = 0; i < 64; ++i)
-	// {
-	// 	float a = noise(fs_UV) * 2.0 - 1.0;
-	// 	float b = noise(fs_UV * 10.0) * 2.0 - 1.0;
-	// 	float c = noise(fs_UV * 100.0);
-	// 	vec3 mySample = vec3(a,b,c);
-	// 	mySample = normalize(mySample);
-	// 	mySample = mySample * noise(mySample.x);
-	// 	float myScale = float(i) / 64.0;
-	// 	myScale = lerp(0.1, 1.0, myScale * myScale);
-	// 	vec3 ssaoKernel = mySample * myScale;
 
 
-	// 	vec3 ssaoSample = TBN * ssaoKernel;
-	// 	ssaoSample = fragPos + ssaoSample * radius;
-	// 	vec4 offset = vec4(ssaoSample, 1.0);
-	// 	offset = u_Proj * offset;
-	// 	offset.xyz /= offset.w;
-	// 	offset.xyz = offset.xyz * 0.5 + 0.5;
-	// 	occlusion += (z_buffer >= ssaoSample.z? 1.0 : 0.0);
-	// }
-
+	float texTime1 = (sin(u_Time/50.0) + 1.0) / 4.0;
+	float texTime2 = (sin(u_Time / 25.0) + 1.0) / 4.0;
+	// col = (texture(tex_Color, fs_UV/2.0 + vec2(texTime1) ).rgb + texture(tex_Noise, fs_UV/2.0 + vec2(texTime2) ).rgb) / 2.0;
+	// col = vec3(1.0);
+	vec3 waterCol = (texture(u_Water1, fs_UV/2.0 + vec2(texTime1) ).rgb + texture(u_Water2, fs_UV/2.0 + vec2(texTime2) ).rgb) / 2.0;
+	// col += waterCol/5.0;
+	// vec3 waterCol = texture(u_Water2, fs_UV/2.0 + vec2(texTime2) ).rgb;
+	
 	// out_Col = vec4(vec3(z_buffer), 1.0);
 	// out_Col = vec4(u_Samples[0], 1.0);
-		out_Col = vec4(vec3(occlusion), 1.0);
+		// out_Col = vec4(vec3(occlusion), 1.0);
 	// out_Col = vec4(gl_FragCoord.xy / u_Dimension, 0.0, 1.0);
+	out_Col = vec4(col, 1.0);
 
 	// out_Col = vec4(, 0.0, 1.0);
 	//out_Col = vec4(noise, 0.0, 0.0, 1.0);

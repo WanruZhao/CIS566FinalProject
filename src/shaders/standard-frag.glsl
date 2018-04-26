@@ -94,8 +94,11 @@ void main() {
 		}break;
 		case TERRIAN:
 		{
-			//col = texture(tex_Noise, fs_UV).rgb;
+			// float texTime1 = (sin(u_Time/50.0) + 1.0) / 4.0;
+			// float texTime2 = (sin(u_Time / 25.0) + 1.0) / 4.0;
+			// col = (texture(tex_Color, fs_UV/2.0 + vec2(texTime1) ).rgb + texture(tex_Noise, fs_UV/2.0 + vec2(texTime2) ).rgb) / 2.0;
 			col = vec3(1.0);
+			// col = texture(tex_Noise, fs_UV).xyz;
 		}break;
 		default:
 		{

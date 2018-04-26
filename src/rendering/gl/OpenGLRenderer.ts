@@ -22,6 +22,10 @@ class OpenGLRenderer {
   depthTexture: WebGLTexture; // You don't need to interact with this, it's just
                               // so the OpenGL pipeline can do depth sorting
 
+
+  // shadowmapTexture:   WebGLTexture; 
+  // shadowmapBuffer:   WebGLFramebuffer;                  
+
   // post-processing buffers pre-tonemapping (32-bit color)
   post32Buffers: WebGLFramebuffer[];
   post32Targets: WebGLTexture[];
@@ -36,6 +40,10 @@ class OpenGLRenderer {
 
   currentTime: number; // timer number to apply to all drawing shaders
 
+  waterTex1 : Texture = new Texture('../resources/textures/water1.jpg');
+  waterTex2 : Texture = new Texture('../resources/textures/water2.jpg');
+  waterTex3 : Texture = new Texture('../resources/textures/water2.jpg');
+
   // the shader that renders from the gbuffers into the postbuffers
   deferredShader :  PostProcess = new PostProcess(
     new Shader(gl.FRAGMENT_SHADER, require('../../shaders/deferred-render.glsl'))
@@ -45,6 +53,10 @@ class OpenGLRenderer {
   tonemapPass : PostProcess = new PostProcess(
     new Shader(gl.FRAGMENT_SHADER, require('../../shaders/tonemap-frag.glsl'))
     );
+
+  // depthmapPass : PostProcess = new PostProcess(
+  //   new Shader(gl.FRAGMENT_SHADER, require('../../shaders/depth-frag.glsl'))
+  //   );
 
   cloudPass : PostProcess = new PostProcess(
     new Shader(gl.FRAGMENT_SHADER, require('../../shaders/cloud-frag.glsl'))
@@ -99,14 +111,15 @@ class OpenGLRenderer {
     var gb1loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb1");
     var gb2loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb2");
     var gbNoise = gl.getUniformLocation(this.deferredShader.prog, "u_SSAONoise");
+    this.deferredShader.setupTexUnits(["u_Water1"]);
+    this.deferredShader.setupTexUnits(["u_Water2"]);
+    this.deferredShader.setupTexUnits(["a"]);
+
     this.deferredShader.use();
     gl.uniform1i(gb0loc, 0);
     gl.uniform1i(gb1loc, 1);
     gl.uniform1i(gb2loc, 2);
     gl.uniform1i(gbNoise, 3);
-
-
-
     
     for( let i = 0; i < 64; ++i)
     {
@@ -188,8 +201,19 @@ class OpenGLRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  
+    // new texture
+    this.deferredShader.bindTexToUnit("u_Water1", this.waterTex1, 4);
+    this.deferredShader.bindTexToUnit("u_Water2", this.waterTex2, 5);
+    this.deferredShader.bindTexToUnit("a", this.waterTex3, 6);
 
-
+    // // shadow map texture
+    // this.shadowmapTexture = gl.createTexture();
+    // gl.bindTexture(gl.TEXTURE_2D, this.shadowmapTexture);
+    // // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1024, 0,gl.RGBA, gl.UNSIGNED_BYTE, null);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
     // depth attachment
     this.depthTexture = gl.createTexture();
@@ -208,6 +232,16 @@ class OpenGLRenderer {
     }
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    // // create shadowmap buffer
+    // this.shadowmapBuffer = gl.createFramebuffer();
+    // gl.bindRenderbuffer(gl.RENDERBUFFER, this.shadowmapBuffer);
+    // gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 1024, 1024);
+    // gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.shadowmapTexture, 0);
+    // gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.shadowmapBuffer);
+    // gl.bindTexture(gl.TEXTURE_2D, null);
+    // gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+
 
     // create the framebuffers for post processing
     for (let i = 0; i < this.post8Buffers.length; i++) {
@@ -302,7 +336,7 @@ class OpenGLRenderer {
     gbProg.setTime(this.currentTime);
     
     for (let drawable of drawables) {
-      // let a = vec3.fromValues(drawable.center[0], );
+
       let a = vec3.fromValues(drawable.center[0], drawable.center[1], drawable.center[2]);
       let inType = drawable.type;
       gbProg.setCenter(a);
@@ -326,9 +360,11 @@ class OpenGLRenderer {
     this.deferredShader.setViewMatrix(view);
     this.deferredShader.setProjMatrix(proj);
     this.deferredShader.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
-
-
     this.deferredShader.setSSAOSamples(ssaoKernel);
+
+        // new texture
+        // this.deferredShader.bindTexToUnit("u_Water1", this.waterTex1, 5);
+        // this.deferredShader.bindTexToUnit("u_Water2", this.waterTex2, 6);
     
     for (let i = 0; i < this.gbTargets.length; i ++) {
       gl.activeTexture(gl.TEXTURE0 + i);
@@ -341,6 +377,19 @@ class OpenGLRenderer {
     this.deferredShader.draw();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
+
+  // renderDepthMap(cam: Camera)
+  // {
+  //   // gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[1]);
+  //   // texture
+  //   // gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[0]);
+
+  //   let view = cam.viewMatrix;
+  //   let proj = cam.projectionMatrix;
+  //   this.depthmapPass.setViewMatrix(view);
+  //   this.depthmapPass.setProjMatrix(proj);
+
+  // }
 
   renderCloudLayer(texture : Texture, cam : Camera) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[1]);

@@ -28,6 +28,8 @@ let mesh0: Mesh;
 
 let tex0: Texture;
 let tex1: Texture;
+let waterTex1: Texture;
+let waterTex2: Texture;
 
 let meshes : Mesh[];
 let cloud : Cloud;
@@ -85,6 +87,8 @@ function loadScene() {
    tex0 = new Texture('../resources/obj/hujing.jpg');
    tex1 = new Texture('../resources/textures/perlinnoise.png');
   // noiseTex = new Texture('../resources/obj/perlinnoise.png');
+   waterTex1 = new Texture('../resources/textures/water1.jpg');
+   waterTex2 = new Texture('../resources/textures/water2.jpg');
 
 }
 
