@@ -172,14 +172,14 @@ function main() {
     renderer.renderFromGBuffer(camera);
 
 
-    // renderer.renderCloudLayer(tex1, camera);
+    renderer.renderCloudLayer(tex1, camera);
 
 
 
     // apply 32-bit post and tonemap from 32-bit color to 8-bit color
-    // renderer.renderPostProcessHDR();
+    renderer.renderPostProcessHDR();
     // apply 8-bit post and draw
-    // renderer.renderPostProcessLDR();
+    renderer.renderPostProcessLDR();
 
     stats.end();
     requestAnimationFrame(tick);

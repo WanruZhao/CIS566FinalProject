@@ -9,6 +9,7 @@ in vec2 fs_UV;
 uniform sampler2D u_frame; // noise
 uniform sampler2D u_frame2; // fish
 uniform sampler2D u_frame3; // depth
+
 uniform float u_Time;
 uniform vec2 u_Dimension;
 uniform mat4 u_ViewProjInv;
@@ -165,7 +166,7 @@ vec3 waterB(vec3 direction) {
 
     vec3 hor = mix( vec3(.9,.6,.7)*0.35, vec3(.5,0.5,0.5), rdl );
     hor = mix(hor, vec3(.8,.5,1),0.5);
-    col += mix( vec3(.2,.2,.8), hor, 1.2 * exp2(-(0.8+ 0.8*(1.-rdl * sin(u_Time / 2.0)))*max(abs(direction.x + texture(u_frame, (direction.xy + vec2(u_Time / 30.0, u_Time / 30.0)) / (60.0 * u_Dimension / u_Dimension.y)).y),0.)) )*.5;
+    col += mix( vec3(.2,.2,.8), hor, exp2(-(1.+ 3.*(1.-rdl))*max(abs(direction.x),0.)) )*.6;//1.2 * exp2(-(0.8+ 0.8*(1.-rdl * sin(u_Time / 2.0)))*max(abs(direction.x + texture(u_frame, (direction.xy + vec2(u_Time / 30.0, u_Time / 30.0)) / (60.0 * u_Dimension / u_Dimension.y)).y),0.)) )*.5;
     col += .8*vec3(1.,.9,.5)*exp2(rdl*650.-650.);
     col += .3*vec3(1.,1.,0.1)*exp2(rdl*100.-100.);
     col += .5*vec3(1.,.7,0.)*exp2(rdl*50.-50.);
@@ -241,8 +242,10 @@ void main()
         float rz = march(origin,direction);
 
         // if cloud if behind the fish, render fish
-        if(rz >= depth * 99.0 && depth < 0.99999) {
+        if(rz >= depth * 99.9 && depth < 0.99999) {
             col = tex;
+            out_Col = vec4(tex, 1.0);
+            return;
         } 
         
         else {
@@ -317,8 +320,10 @@ void main()
         float rz = march(origin,direction);
 
         // if cloud if behind the fish, render fish
-        if(rz >= depth * 99.0 && depth < 0.99999) {
+        if(rz >= depth * 99.9 && depth < 0.99999) {
             col = tex;
+            out_Col = vec4(tex, 1.0);
+            return;
         } 
         
         else {
@@ -351,6 +356,8 @@ void main()
 
         out_Col = vec4( col, 1.0 );
     }
+
+    // out_Col = vec4(tex, 1.0);
 
 	
 }

@@ -22,7 +22,7 @@ uniform mat4 u_Proj;
 uniform float u_Time;
 
 
-const vec4 lightPos = vec4(100, 100, 0, 1); 
+const vec4 lightPos = vec4(50, 50, 0, 1); 
 
 float lerp(float a, float b, float f)
 {
@@ -85,12 +85,13 @@ void main() {
 	// lambertian model
 	vec3 normal = texture(u_gb0, fs_UV).xyz;
 	float diffuseTerm = dot(normalize(vec3(normal)), normalize(vec3(lightPos - pos_World)));
-	float ambientTerm = 0.5;
+	float ambientTerm = 0.2;
 	// if(texture(u_gb1, fs_UV).x > 0.5) ambientTerm = 0.3;
 	float term = clamp(diffuseTerm, 0.0, 1.0) + ambientTerm;
 
-	if(texture(u_gb1, fs_UV).x > 0.5) term = 1.0;
-	// col = col * term;
+	// if(texture(u_gb1, fs_UV).x > 0.5) term = 1.0;
+	term = clamp(term, 0.0, 1.0);
+	
 
     // ==================== SSAO ======================//
 	vec3 fragPos = texture(u_gb1, fs_UV).xyz;
@@ -130,7 +131,7 @@ void main() {
 	// out_Col = vec4(u_Samples[0], 1.0);
 		// out_Col = vec4(vec3(occlusion), 1.0);
 	// out_Col = vec4(gl_FragCoord.xy / u_Dimension, 0.0, 1.0);
-	out_Col = vec4(col, 1.0);
+	out_Col = vec4(col * term, 1.0);
 
 	// out_Col = vec4(, 0.0, 1.0);
 	//out_Col = vec4(noise, 0.0, 0.0, 1.0);

@@ -349,10 +349,9 @@ class OpenGLRenderer {
   }
 
   renderFromGBuffer(camera: Camera) {
-    // gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.disable(gl.DEPTH_TEST);
-    gl.enable(gl.BLEND);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     let view = camera.viewMatrix;
@@ -396,8 +395,8 @@ class OpenGLRenderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[1]);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.disable(gl.DEPTH_TEST);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    // gl.enable(gl.BLEND);
+    // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // this.cloudPass.bindTexToUnit("u_frame", texture, 0);
@@ -405,7 +404,7 @@ class OpenGLRenderer {
     texture.bindTex();
 
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[2]);
+    gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[0]);
 
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[1]);

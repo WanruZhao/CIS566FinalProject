@@ -112,12 +112,12 @@ void main() {
     col = pow(col, vec3(2.2));
 
 	float z_buffer = LinearizeDepth(gl_FragCoord.z);
-	// z_buffer = abs(z_buffer / (100.0 - 0.1));
+	float depth = abs(fs_Pos.z / (100.0 - 0.1));
 	// 32 bit: normal and z_buffer
     fragColor[0] = vec4(normalize(fs_Nor).xyz, z_buffer);
 
 	// 8 bit camera space positions
-    fragColor[1] = fs_Pos;
+    fragColor[1] = vec4(vec3(depth), 1.0);
 
 	// 8 bit: color 
     fragColor[2] = vec4(col, 1.0);
