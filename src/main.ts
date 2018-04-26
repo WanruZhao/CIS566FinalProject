@@ -75,9 +75,9 @@ function loadScene() {
     fishes.push(mesh0);
   }
 
-  terrian = new Mesh(myTerrian, vec3.fromValues(0, 0, 0), 1);
-  terrian.create();
-  fishes.push(terrian);
+  // terrian = new Mesh(myTerrian, vec3.fromValues(0, 0, 0), 1);
+  // terrian.create();
+  // fishes.push(terrian);
 
 
   cloud = new Cloud(vec3.fromValues(0,0,0), vec3.fromValues(10,3,10), vec3.fromValues(0,0,0), 5);
