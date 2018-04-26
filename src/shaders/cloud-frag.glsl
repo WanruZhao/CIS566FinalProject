@@ -256,7 +256,7 @@ vec3 sun(vec2 p)
 	vec2 uv = p.xy / u_Dimension.xy - 0.5;
 	uv.x *= u_Dimension.x/u_Dimension.y; //fix aspect ratio
 	
-	vec3 color = vec3(1.4,1.2,1.0)*lensflare(uv,vec2(0.0));
+	vec3 color = vec3(1.4,1.2,1.0)*lensflare(uv,vec2(-0.3, -0.4));
 	color -= noises(p.xy)*.015;
 	color = cc(color,.4,.1);
     return color;
@@ -307,7 +307,7 @@ void main()
         // calculate background color
         vec3 col = skyB(q, direction);
 
-        col +=  sun(gl_FragCoord.xy + 0.4 * vec2(u_Dimension.x, 0.0));
+        col  *= 3.0 * sun(gl_FragCoord.xy + 0.3 * vec2(u_Dimension.x, 0.0));
         
 
         vec3 bgc = col;
@@ -318,13 +318,13 @@ void main()
 
         // if cloud if behind the fish, render fish
         if(rz >= depth * 99.9 && depth < 0.99999) {
-            col = tex;
+            col = tex * vec3(0.8, 0.6, 0.4);
         } 
         
         else {
             // set the col to fish color
             if(depth < 0.9999){
-                col = tex; 
+                col = tex * vec3(0.8, 0.6, 0.4); 
             }
             
             // if depth of cloud is within threshold, ray marching noise function to get the volumetric cloud
