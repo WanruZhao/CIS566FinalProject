@@ -39,7 +39,7 @@ void main() {
 	vec3 color = texture(u_frame, fs_UV).xyz;
 	float grey = 0.21 * color.x + 0.72 * color.y + 0.07 * color.z;
 
-    float blurScale = 3.0;
+    float blurScale = 0.5;
 
 
     for(int i = - radius / 2; i <= radius / 2; i++) {

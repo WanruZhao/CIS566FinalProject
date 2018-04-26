@@ -3,9 +3,10 @@ import Drawable from '../rendering/gl/Drawable';
 import { gl } from '../globals';
 import * as Loader from 'webgl-obj-loader';
 class Mesh extends Drawable {
-    constructor(objString, center) {
+    constructor(objString, center, inType) {
         super(); // Call the constructor of the super class. This is required.
         this.center = vec4.fromValues(center[0], center[1], center[2], 1);
+        this.type = inType;
         this.objString = objString;
     }
     create() {
@@ -16,6 +17,7 @@ class Mesh extends Drawable {
         var loadedMesh = new Loader.Mesh(this.objString);
         //posTemp = loadedMesh.vertices;
         for (var i = 0; i < loadedMesh.vertices.length; i++) {
+            // posTemp.push(loadedMesh.vertices[i] + this.center[i % 3]);
             posTemp.push(loadedMesh.vertices[i]);
             if (i % 3 == 2)
                 posTemp.push(1.0);

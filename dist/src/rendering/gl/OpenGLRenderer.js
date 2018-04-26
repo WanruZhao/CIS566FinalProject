@@ -1,16 +1,29 @@
-import { mat4, vec4 } from 'gl-matrix';
+import { vec2, mat4, vec4, vec3 } from 'gl-matrix';
 import { gl } from '../../globals';
 import { Shader } from './ShaderProgram';
 import PostProcess from './PostProcess';
+import { Texture } from './Texture';
+// import { normalize } from 'gl-matrix/src/gl-matrix/vec2';
+const ssaoKernel = [];
 class OpenGLRenderer {
     constructor(canvas) {
         this.canvas = canvas;
+        this.waterTex1 = new Texture('../resources/textures/water1.jpg');
+        this.waterTex2 = new Texture('../resources/textures/water2.jpg');
+        this.waterTex3 = new Texture('../resources/textures/water2.jpg');
         // the shader that renders from the gbuffers into the postbuffers
         this.deferredShader = new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/deferred-render.glsl')));
         // shader that maps 32-bit color to 8-bit color
         this.tonemapPass = new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/tonemap-frag.glsl')));
+        // depthmapPass : PostProcess = new PostProcess(
+        //   new Shader(gl.FRAGMENT_SHADER, require('../../shaders/depth-frag.glsl'))
+        //   );
+        this.cloudPass = new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/cloud-frag.glsl')));
+        this.copyPass = new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/copy-frag.glsl')));
+        this.blurPass = new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/blur-frag.glsl')));
+        this.skyPass = new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/sky-frag.glsl')));
         this.currentTime = 0.0;
-        this.gbTargets = [undefined, undefined, undefined];
+        this.gbTargets = [undefined, undefined, undefined, undefined];
         this.post8Buffers = [undefined, undefined];
         this.post8Targets = [undefined, undefined];
         this.post8Passes = [];
@@ -18,9 +31,9 @@ class OpenGLRenderer {
         this.post32Targets = [undefined, undefined];
         this.post32Passes = [];
         // TODO: these are placeholder post shaders, replace them with something good
-        this.add8BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost-frag.glsl'))));
-        this.add8BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost2-frag.glsl'))));
-        this.add32BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost3-frag.glsl'))));
+        // this.add8BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost-frag.glsl'))));
+        // this.add8BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/examplePost2-frag.glsl'))));
+        // this.add32BitPass(new PostProcess(new Shader(gl.FRAGMENT_SHADER, require('../../shaders/cloud-frag.glsl'))));
         if (!gl.getExtension("OES_texture_float_linear")) {
             console.error("OES_texture_float_linear not available");
         }
@@ -30,10 +43,36 @@ class OpenGLRenderer {
         var gb0loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb0");
         var gb1loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb1");
         var gb2loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb2");
+        var gb3loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb3");
+        var gbNoise = gl.getUniformLocation(this.deferredShader.prog, "u_SSAONoise");
+        this.deferredShader.setupTexUnits(["u_Water1"]);
+        this.deferredShader.setupTexUnits(["u_Water2"]);
+        this.deferredShader.setupTexUnits(["a"]);
         this.deferredShader.use();
         gl.uniform1i(gb0loc, 0);
         gl.uniform1i(gb1loc, 1);
         gl.uniform1i(gb2loc, 2);
+        gl.uniform1i(gb3loc, 3);
+        gl.uniform1i(gbNoise, 4);
+        for (let i = 0; i < 64; ++i) {
+            let ssaoSample = vec3.fromValues(Math.random() * 2.0 - 1.0, Math.random() * 2.0 - 1.0, Math.random());
+            let a = Math.random() * 2.0 - 1.0;
+            let b = Math.random() * 2.0 - 1.0;
+            let c = Math.random();
+            let l = Math.sqrt(a * a + b * b + c * c);
+            let temp = Math.random();
+            a = a * temp / l;
+            b = b * temp / l;
+            c = c * temp / l;
+            let ssaoScale = i * 1.0 / 64.0;
+            ssaoScale = 0.1 + ssaoScale * ssaoScale * (1.0 - 0.1);
+            a = a * ssaoScale;
+            b = b * ssaoScale;
+            c = c * ssaoScale;
+            ssaoKernel.push(ssaoScale);
+            ssaoKernel.push(b);
+            ssaoKernel.push(c);
+        }
     }
     add8BitPass(pass) {
         this.post8Passes.push(pass);
@@ -60,14 +99,44 @@ class OpenGLRenderer {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            if (i == 0) {
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.FLOAT, null);
+            if (i == 2) {
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
             }
             else {
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.FLOAT, null);
             }
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, this.gbTargets[i], 0);
         }
+        // SSAO Noise texture
+        let ssaoNoiseData = [];
+        for (let i = 0; i < 16; i++) {
+            // let noise = vec3.fromValues(Math.random() * 2.0 - 1.0,
+            //                             Math.random() * 2.0 - 1.0,
+            //                             0.0);
+            ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
+            ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
+            ssaoNoiseData.push(0.0);
+        }
+        const ssaoNoise = new Float32Array(ssaoNoiseData);
+        this.gbNoiseTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.gbNoiseTexture);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, 4, 4, 0, gl.RGB, gl.FLOAT, ssaoNoise);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        // new texture
+        this.deferredShader.bindTexToUnit("u_Water1", this.waterTex1, 5);
+        this.deferredShader.bindTexToUnit("u_Water2", this.waterTex2, 5);
+        this.deferredShader.bindTexToUnit("a", this.waterTex3, 6);
+        // // shadow map texture
+        // this.shadowmapTexture = gl.createTexture();
+        // gl.bindTexture(gl.TEXTURE_2D, this.shadowmapTexture);
+        // // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1024, 0,gl.RGBA, gl.UNSIGNED_BYTE, null);
+        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         // depth attachment
         this.depthTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
@@ -83,6 +152,14 @@ class OpenGLRenderer {
             console.error("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[0]\n");
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        // // create shadowmap buffer
+        // this.shadowmapBuffer = gl.createFramebuffer();
+        // gl.bindRenderbuffer(gl.RENDERBUFFER, this.shadowmapBuffer);
+        // gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 1024, 1024);
+        // gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.shadowmapTexture, 0);
+        // gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.shadowmapBuffer);
+        // gl.bindTexture(gl.TEXTURE_2D, null);
+        // gl.bindRenderbuffer(gl.RENDERBUFFER, null);
         // create the framebuffers for post processing
         for (let i = 0; i < this.post8Buffers.length; i++) {
             // 8 bit buffers have unsigned byte textures of type gl.RGBA8
@@ -141,6 +218,7 @@ class OpenGLRenderer {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.gBuffer);
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
         gl.enable(gl.DEPTH_TEST);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         let model = mat4.create();
         let viewProj = mat4.create();
         let view = camera.viewMatrix;
@@ -155,6 +233,10 @@ class OpenGLRenderer {
         gbProg.setProjMatrix(proj);
         gbProg.setTime(this.currentTime);
         for (let drawable of drawables) {
+            let a = vec3.fromValues(drawable.center[0], drawable.center[1], drawable.center[2]);
+            let inType = drawable.type;
+            gbProg.setCenter(a);
+            gbProg.setType(inType);
             gbProg.draw(drawable);
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -163,17 +245,65 @@ class OpenGLRenderer {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
         gl.disable(gl.DEPTH_TEST);
-        gl.enable(gl.BLEND);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         let view = camera.viewMatrix;
         let proj = camera.projectionMatrix;
         this.deferredShader.setViewMatrix(view);
         this.deferredShader.setProjMatrix(proj);
+        this.deferredShader.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
+        this.deferredShader.setSSAOSamples(ssaoKernel);
+        // this.deferredShader.setShadowMVMatrix();
+        // new texture
+        // this.deferredShader.bindTexToUnit("u_Water1", this.waterTex1, 5);
+        // this.deferredShader.bindTexToUnit("u_Water2", this.waterTex2, 6);
         for (let i = 0; i < this.gbTargets.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
             gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[i]);
         }
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, this.gbNoiseTexture);
         this.deferredShader.draw();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+    // renderDepthMap(cam: Camera)
+    // {
+    //   // gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[1]);
+    //   // texture
+    //   // gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[0]);
+    //   let view = cam.viewMatrix;
+    //   let proj = cam.projectionMatrix;
+    //   this.depthmapPass.setViewMatrix(view);
+    //   this.depthmapPass.setProjMatrix(proj);
+    // }
+    renderCloudLayer(texture, cam) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[1]);
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        gl.disable(gl.DEPTH_TEST);
+        // gl.enable(gl.BLEND);
+        // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        // this.cloudPass.bindTexToUnit("u_frame", texture, 0);
+        gl.activeTexture(gl.TEXTURE0);
+        texture.bindTex();
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[0]);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[1]);
+        this.cloudPass.setTime(this.currentTime);
+        this.cloudPass.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
+        this.cloudPass.setFar(cam.far);
+        this.cloudPass.setEye(vec4.fromValues(cam.position[0], cam.position[1], cam.position[2], 1.0));
+        this.cloudPass.draw();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        gl.disable(gl.DEPTH_TEST);
+        gl.enable(gl.BLEND);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[1]);
+        this.skyPass.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
+        this.skyPass.draw();
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
     // TODO: pass any info you need as args
@@ -197,6 +327,8 @@ class OpenGLRenderer {
             // each frame (the texture we wrote to in our previous render pass).
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[(i) % 2]);
+            this.post32Passes[i].setTime(this.currentTime);
+            this.post32Passes[i].setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
             this.post32Passes[i].draw();
             // bind default frame buffer
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);

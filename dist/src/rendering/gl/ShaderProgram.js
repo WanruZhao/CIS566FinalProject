@@ -29,10 +29,22 @@ class ShaderProgram {
         this.unifModel = gl.getUniformLocation(this.prog, "u_Model");
         this.unifModelInvTr = gl.getUniformLocation(this.prog, "u_ModelInvTr");
         this.unifViewProj = gl.getUniformLocation(this.prog, "u_ViewProj");
+        this.unifViewProjInv = gl.getUniformLocation(this.prog, "u_ViewProjInv");
         this.unifView = gl.getUniformLocation(this.prog, "u_View");
         this.unifProj = gl.getUniformLocation(this.prog, "u_Proj");
         this.unifColor = gl.getUniformLocation(this.prog, "u_Color");
         this.unifTime = gl.getUniformLocation(this.prog, "u_Time");
+        this.unifViewInv = gl.getUniformLocation(this.prog, "u_ViewInv");
+        this.unifDimension = gl.getUniformLocation(this.prog, "u_Dimension");
+        this.unifFar = gl.getUniformLocation(this.prog, "u_Far");
+        this.unifEye = gl.getUniformLocation(this.prog, "u_Eye");
+        this.unifCenter = gl.getUniformLocation(this.prog, "u_Center");
+        this.unifType = gl.getUniformLocation(this.prog, "u_Type");
+        this.unifSSAOSamples = gl.getUniformLocation(this.prog, "u_Samples");
+        this.unifShadowPMatrix = gl.getUniformLocation(this.prog, "u_PMatrix");
+        this.unifShadowMVMatrix = gl.getUniformLocation(this.prog, "u_MVMatrix");
+        this.unifLightP = gl.getUniformLocation(this.prog, "u_LightP");
+        this.unifLightV = gl.getUniformLocation(this.prog, "u_LightV");
         this.unifTexUnits = new Map();
     }
     setupTexUnits(handleNames) {
@@ -82,11 +94,21 @@ class ShaderProgram {
         if (this.unifViewProj !== -1) {
             gl.uniformMatrix4fv(this.unifViewProj, false, vp);
         }
+        if (this.unifViewProjInv !== -1) {
+            let viewProjInv = mat4.create();
+            mat4.invert(viewProjInv, vp);
+            gl.uniformMatrix4fv(this.unifViewProjInv, false, viewProjInv);
+        }
     }
     setViewMatrix(vp) {
         this.use();
         if (this.unifView !== -1) {
             gl.uniformMatrix4fv(this.unifView, false, vp);
+        }
+        if (this.unifViewInv !== -1) {
+            let viewinv = mat4.create();
+            mat4.invert(viewinv, vp);
+            gl.uniformMatrix4fv(this.unifViewInv, false, viewinv);
         }
     }
     setProjMatrix(vp) {
@@ -105,6 +127,66 @@ class ShaderProgram {
         this.use();
         if (this.unifTime !== -1) {
             gl.uniform1f(this.unifTime, t);
+        }
+    }
+    setDimension(d) {
+        this.use();
+        if (this.unifDimension !== -1) {
+            gl.uniform2fv(this.unifDimension, d);
+        }
+    }
+    setFar(f) {
+        this.use();
+        if (this.unifFar !== -1) {
+            gl.uniform1f(this.unifFar, f);
+        }
+    }
+    setEye(e) {
+        this.use();
+        if (this.unifEye !== -1) {
+            gl.uniform4fv(this.unifEye, e);
+        }
+    }
+    setCenter(center) {
+        this.use();
+        if (this.unifCenter !== -1) {
+            gl.uniform3fv(this.unifCenter, center);
+        }
+    }
+    setType(type) {
+        this.use();
+        if (this.unifType !== -1) {
+            gl.uniform1i(this.unifType, type);
+        }
+    }
+    setSSAOSamples(s) {
+        this.use();
+        if (this.unifSSAOSamples !== -1) {
+            gl.uniform3fv(this.unifSSAOSamples, s, 0, 192);
+        }
+    }
+    setShadowPMatrix(lightProjectionMatrix) {
+        this.use();
+        if (this.unifShadowPMatrix !== -1) {
+            gl.uniformMatrix4fv(this.unifShadowPMatrix, false, lightProjectionMatrix);
+        }
+    }
+    setShadowMVMatrix(lightViewMatrix) {
+        this.use();
+        if (this.unifShadowMVMatrix !== -1) {
+            gl.uniformMatrix4fv(this.unifShadowMVMatrix, false, lightViewMatrix);
+        }
+    }
+    setLightP(lightP) {
+        this.use();
+        if (this.unifLightP !== -1) {
+            gl.uniformMatrix4fv(this.unifLightP, false, lightP);
+        }
+    }
+    setLightV(lightV) {
+        this.use();
+        if (this.unifLightV !== -1) {
+            gl.uniformMatrix4fv(this.unifLightV, false, lightV);
         }
     }
     draw(d) {

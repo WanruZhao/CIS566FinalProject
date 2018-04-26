@@ -9,11 +9,12 @@ in vec4 fs_Nor;
 in vec4 fs_Col;
 in vec2 fs_UV;
 in vec4 fs_WorldNor;
+in vec4 fs_PosWorld;
 
 uniform float u_Time;
 uniform vec3 u_Center;
 uniform int u_Type;
-out vec4 fragColor[3]; // The data in the ith index of this array of outputs
+out vec4 fragColor[4]; // The data in the ith index of this array of outputs
                        // is passed to the ith index of OpenGLRenderer's
                        // gbTargets array, which is an array of textures.
                        // This lets us output different types of data,
@@ -112,14 +113,21 @@ void main() {
     col = pow(col, vec3(2.2));
 
 	float z_buffer = LinearizeDepth(gl_FragCoord.z);
-	float z_cloudDepth = abs(z_buffer / (100.0 - 0.1));
+	float depth = abs(fs_Pos.z / (100.0 - 0.1));
+
 	// 32 bit: normal and z_buffer
     fragColor[0] = vec4(normalize(fs_Nor).xyz, z_buffer);
 
 	// 8 bit camera space positions
-    fragColor[1] = vec4(fs_Pos.xyz, z_cloudDepth);
+
+    // fragColor[1] = vec4(fs_Pos.xyz, z_cloudDepth);
+
+    fragColor[1] = vec4(depth);
+
 
 	// 8 bit: color 
     fragColor[2] = vec4(col, 1.0);
+
+	fragColor[3] = vec4(fs_Pos.xyz, 1.0);
 
 }

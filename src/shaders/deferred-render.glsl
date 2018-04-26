@@ -10,11 +10,13 @@ out vec4 out_Col;
 uniform sampler2D u_gb0;
 uniform sampler2D u_gb1;
 uniform sampler2D u_gb2;
+uniform sampler2D u_gb3;
 uniform sampler2D u_SSAONoise;
 uniform sampler2D u_Water1;
 uniform sampler2D u_Water2;
 uniform vec3 u_Samples[64];
 uniform mat4 u_View;
+uniform mat4 u_Model;
 uniform vec4 u_CamPos; 
 uniform mat4 u_ViewInv; 
 uniform vec2 u_Dimension;
@@ -22,7 +24,7 @@ uniform mat4 u_Proj;
 uniform float u_Time;
 
 
-const vec4 lightPos = vec4(100, 100, 0, 1); 
+const vec4 lightPos = vec4(50, 50, 0, 1); 
 
 float lerp(float a, float b, float f)
 {
@@ -85,15 +87,16 @@ void main() {
 	// lambertian model
 	vec3 normal = texture(u_gb0, fs_UV).xyz;
 	float diffuseTerm = dot(normalize(vec3(normal)), normalize(vec3(lightPos - pos_World)));
-	float ambientTerm = 0.5;
+	float ambientTerm = 0.2;
 	// if(texture(u_gb1, fs_UV).x > 0.5) ambientTerm = 0.3;
 	float term = clamp(diffuseTerm, 0.0, 1.0) + ambientTerm;
 
-	if(texture(u_gb1, fs_UV).x > 0.5) term = 1.0;
-	// col = col * term;
+	// if(texture(u_gb1, fs_UV).x > 0.5) term = 1.0;
+	term = clamp(term, 0.0, 1.0);
+	
 
     // ==================== SSAO ======================//
-	vec3 fragPos = texture(u_gb1, fs_UV).xyz;
+	vec3 fragPos = texture(u_gb3, fs_UV).xyz;
 	vec3 ao_normal = texture(u_gb0, fs_UV).xyz;
 	float z_buffer = texture(u_gb0, fs_UV).w / (100.0 - 0.1);
 	vec3 randomVec = normalize(texture(u_SSAONoise, fs_UV * noiseScale).xyz);
@@ -102,6 +105,7 @@ void main() {
 	mat3 TBN = mat3(tangent, bitangent, ao_normal);
 	float occlusion = 0.0;
 	float radius = 1.0;
+
 	for(int i = 0; i < 64; ++i)
 	{
 		vec3 mySample = TBN * u_Samples[i];
@@ -110,7 +114,14 @@ void main() {
 		offset = u_Proj * offset;
 		offset.xyz /= offset.w;
 		offset.xyz = offset.xyz * 0.5 + 0.5;
-		float sampleDepth = texture(u_gb1, offset.xy).z;
+		float sampleDepth = texture(u_gb3, offset.xy).z;
+
+
+		// convert cam depth to world depth
+		// vec3 samplePos = texture(u_gb3, offset.xy).xyz;
+		// vec3 sampleWorldPos = (u_ViewInv * vec4(samplePos, 1.0)).xyz + u_CamPos.xyz;
+		// float sampleDepth = sampleWorldPos.z;
+
 		float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
 		occlusion += (sampleDepth >= mySample.z + 0.025? 1.0 : 0.0 ) * rangeCheck;
 	}
@@ -118,19 +129,23 @@ void main() {
 	occlusion = 1.0 - (occlusion / 64.0);
 
 
-	float texTime1 = (sin(u_Time/50.0) + 1.0) / 4.0;
-	float texTime2 = (sin(u_Time / 25.0) + 1.0) / 4.0;
+	float texTime1 = (sin(u_Time/80.0) + 1.0) / 4.0;
+	float texTime2 = (sin(u_Time/40.0) + 1.0) / 4.0;
+	float texTime3 = (cos(u_Time/ 50.0) + 1.0) / 4.0;
+	float texTime4 = (cos(u_Time/ 40.0) + 1.0) / 4.0;
 	// col = (texture(tex_Color, fs_UV/2.0 + vec2(texTime1) ).rgb + texture(tex_Noise, fs_UV/2.0 + vec2(texTime2) ).rgb) / 2.0;
 	// col = vec3(1.0);
-	vec3 waterCol = (texture(u_Water1, fs_UV/2.0 + vec2(texTime1) ).rgb + texture(u_Water2, fs_UV/2.0 + vec2(texTime2) ).rgb) / 2.0;
-	// col += waterCol/5.0;
+	vec3 waterCol = (texture(u_Water1, fs_UV/2.0 + vec2(texTime1, texTime3) ).rgb + texture(u_Water2, fs_UV/2.0 + vec2(texTime2, texTime4) ).rgb) / 2.0;
+	if(fs_UV.x > 0.5) col += waterCol * 0.5;
 	// vec3 waterCol = texture(u_Water2, fs_UV/2.0 + vec2(texTime2) ).rgb;
 	
 	// out_Col = vec4(vec3(z_buffer), 1.0);
-	// out_Col = vec4(u_Samples[0], 1.0);
-		// out_Col = vec4(vec3(occlusion), 1.0);
+	// out_Col = vec4(u_Samples[50], 1.0);
+		// out_Col = vec4(randomVec, 1.0);
+	// out_Col = vec4(vec3(occlusion), 1.0);
 	// out_Col = vec4(gl_FragCoord.xy / u_Dimension, 0.0, 1.0);
-	out_Col = vec4(col, 1.0);
+	out_Col = vec4(col * term * occlusion, 1.0);
+
 
 	// out_Col = vec4(, 0.0, 1.0);
 	//out_Col = vec4(noise, 0.0, 0.0, 1.0);

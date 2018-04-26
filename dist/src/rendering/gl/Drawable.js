@@ -7,6 +7,7 @@ class Drawable {
         this.norBound = false;
         this.colBound = false;
         this.uvBound = false;
+        this.typeBound = false;
     }
     destroy() {
         gl.deleteBuffer(this.bufIdx);
@@ -14,6 +15,7 @@ class Drawable {
         gl.deleteBuffer(this.bufNor);
         gl.deleteBuffer(this.bufCol);
         gl.deleteBuffer(this.bufUV);
+        gl.deleteBuffer(this.bufType);
     }
     generateIdx() {
         this.idxBound = true;
@@ -34,6 +36,10 @@ class Drawable {
     generateUV() {
         this.uvBound = true;
         this.bufUV = gl.createBuffer();
+    }
+    generateType() {
+        this.typeBound = true;
+        this.bufType = gl.createBuffer();
     }
     bindIdx() {
         if (this.idxBound) {
@@ -64,6 +70,12 @@ class Drawable {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.bufUV);
         }
         return this.uvBound;
+    }
+    bindType() {
+        if (this.typeBound) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.bufUV);
+        }
+        return this.typeBound;
     }
     elemCount() {
         return this.count;

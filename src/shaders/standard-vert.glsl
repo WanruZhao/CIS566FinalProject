@@ -19,6 +19,7 @@ out vec4 fs_Nor;
 out vec4 fs_Col;           
 out vec2 fs_UV;
 out vec4 fs_WorldNor;
+out vec4 fs_PosWorld;
 
 float hash(float n) { return fract(sin(n) * 1e4); }
 float hash(vec2 p) { return fract(1e4 * sin(17.0 * p.x + p.y * 0.1) * (0.1 + abs(sin(p.y * 13.0 + p.x)))); }
@@ -76,17 +77,19 @@ void main()
     fs_UV.y = 1.0 - fs_UV.y;
 
 
-
+    float m_Noise = noise(u_Center);
     // fragment info is in view space
     mat3 invTranspose = mat3(u_ModelInvTr);
     mat3 view = mat3(u_View);
     fs_Nor = vec4(view * invTranspose * vec3(vs_Nor), 0);
     vec4 worldPos = vs_Pos;
-    // worldPos.x += 5.0 * sin(u_Time / 2.0);
+    worldPos.x += 3.0 * sin(u_Time / 2.0) + m_Noise;
 
 
-    float m_Noise = noise(u_Center);
-    float x_time = 3.0 * ((worldPos.z - 8.0) + 3.0) / 40.0 * sin(worldPos.z/ 20.0 + 5.0 * u_Time / 2.0) / 2.0 + 1.0;
+
+    // float x_time = 3.0 * ((worldPos.z - 8.0) + 3.0) / 40.0 * sin(worldPos.z/ 20.0 + 5.0 * u_Time / 5.0) / 2.0 + 1.0 + 2.0 * m_Noise - 1.0; 
+    float x_time = 3.0 * ((worldPos.z - 8.0) + 3.0) / 40.0 * sin((worldPos.z)/ 20.0 + 5.0 * (u_Time + (2.0 * m_Noise -1.0) * 10.0) / 5.0) / 2.0 + 1.0; 
+    
     mat4 rotX = mat4(0.0);
     rotX[1][1] = cos(x_time);
     rotX[1][2] = -sin(x_time);
@@ -128,12 +131,13 @@ void main()
     tra[2][3] = 2.0;
     tra = transpose(tra);
     
+    float moveToSide = 40.0;
     mat4 CenterTra = mat4(0.0);
     CenterTra[0][0] = 1.0;
     CenterTra[1][1] = 1.0;
     CenterTra[2][2] = 1.0;
     CenterTra[3][3] = 1.0;
-    CenterTra[0][3] = u_Center[0] + 25.0 - 50.0 * fract(u_Time / 10.0);
+    CenterTra[0][3] = moveToSide - 80.0 * fract((u_Time + u_Center[0]*10.0) / 40.0);
     // CenterTra[0][3] = u_Center[0] + 25.0;
     CenterTra[1][3] = u_Center[1];
     CenterTra[2][3] = u_Center[2];
@@ -169,10 +173,20 @@ void main()
     cameraRotZ[3][3] = 1.0;
     cameraRotZ = transpose(cameraRotZ);
 
-    worldPos = CenterTra * cameraRotY * cameraRotX * rotX * worldPos; 
+    float scaleFactor = 0.3 + 0.1 * (2.0 * m_Noise - 1.0);
+    mat4 scaleMatrix = mat4(0.0);
+    scaleMatrix[0][0] = scaleFactor;
+    scaleMatrix[1][1] = scaleFactor;
+    scaleMatrix[2][2] = scaleFactor;
+    scaleMatrix[3][3] = 1.0;
 
-    fs_Pos = u_View * u_Model * vs_Pos;
-    gl_Position = u_Proj * u_View * u_Model * vs_Pos;
+
+    // worldPos = CenterTra * cameraRotY * cameraRotX * rotX * worldPos; 
+    worldPos =  CenterTra * cameraRotY * cameraRotX * rotX *  scaleMatrix * worldPos; 
+
+    fs_PosWorld = worldPos;
+    fs_Pos = u_View * u_Model * worldPos;
+    gl_Position = u_Proj * u_View * u_Model * worldPos;
 // ========================== bird movements ===========================================//
 
 //     vec4 birdPos = vec4(0.0);
