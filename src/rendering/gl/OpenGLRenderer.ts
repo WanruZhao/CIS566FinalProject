@@ -8,7 +8,7 @@ import Square from '../../geometry/Square';
 import { Texture } from './Texture';
 import { getPackedSettings } from 'http2';
 // import { normalize } from 'gl-matrix/src/gl-matrix/vec2';
-
+const ssaoKernel : Array<number> = [];
 
 class OpenGLRenderer {
   gBuffer: WebGLFramebuffer; // framebuffer for deferred rendering
@@ -104,6 +104,32 @@ class OpenGLRenderer {
     gl.uniform1i(gb1loc, 1);
     gl.uniform1i(gb2loc, 2);
     gl.uniform1i(gbNoise, 3);
+
+
+
+    
+    for( let i = 0; i < 64; ++i)
+    {
+      let ssaoSample = vec3.fromValues(Math.random() * 2.0 - 1.0,
+                                       Math.random() * 2.0 - 1.0,
+                                       Math.random());
+      let a = Math.random() * 2.0 - 1.0;
+      let b = Math.random() * 2.0 - 1.0;
+      let c = Math.random();                         
+      let  l = Math.sqrt(a*a + b*b + c*c);  
+      let temp = Math.random(); 
+      a = a * temp / l;
+      b = b * temp / l;
+      c = c * temp / l;                                            
+      let ssaoScale = i * 1.0 / 64.0;
+      ssaoScale = 0.1 + ssaoScale * ssaoScale * (1.0 - 0.1);
+      a = a * ssaoScale;
+      b = b * ssaoScale;
+      c = c * ssaoScale;
+      ssaoKernel.push(ssaoScale);
+      ssaoKernel.push(b);
+      ssaoKernel.push(c);
+    }
   }
 
 
@@ -131,11 +157,11 @@ class OpenGLRenderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-      if (i == 0) {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.FLOAT, null);
+      if (i == 2) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
       }
       else {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.FLOAT, null);
       }
 
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, this.gbTargets[i], 0);
@@ -274,39 +300,6 @@ class OpenGLRenderer {
     gbProg.setProjMatrix(proj);
 
     gbProg.setTime(this.currentTime);
-
-
-    // let ssaoNoiseData: Array<number> = [];
-    // for(let i = 0; i < 16; i++){
-    //   // let noise = vec3.fromValues(Math.random() * 2.0 - 1.0,
-    //   //                             Math.random() * 2.0 - 1.0,
-    //   //                             0.0);
-    //   ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
-    //   ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
-    //   ssaoNoiseData.push(0.0);
-    // }   
-    // const ssaoNoise = new Float32Array(ssaoNoiseData);
-
-    let ssaoKernel : Array<number> = [];
-    
-    for( let i = 0; i < 64; ++i)
-    {
-      let ssaoSample = vec3.fromValues(Math.random() * 2.0 - 1.0,
-                                       Math.random() * 2.0 - 1.0,
-                                       Math.random());
-      let  l =    Math.sqrt(ssaoSample[0]*ssaoSample[0] + ssaoSample[1]*ssaoSample[1] + ssaoSample[2]*ssaoSample[2]);  
-      let temp = Math.random();                                              
-      ssaoSample = vec3.fromValues(ssaoSample[0]*temp  / l, ssaoSample[1]*temp / l, ssaoSample[2]*temp / l);
-      let ssaoScale = i / 64.0;
-      ssaoScale = 0.1 + ssaoScale * ssaoScale * (1.0 - 0.1);
-      ssaoSample = vec3.fromValues(ssaoSample[0]*ssaoScale, ssaoSample[1]*ssaoScale, ssaoSample[2]*ssaoScale,);
-      ssaoKernel.push(ssaoSample[0]);
-      ssaoKernel.push(ssaoSample[1]);
-      ssaoKernel.push(ssaoSample[2]);
-    }
-
-    const ssaoKernelData = new Float32Array(ssaoKernel);
-    gbProg.setSSAOSamples(ssaoKernelData);
     
     for (let drawable of drawables) {
       // let a = vec3.fromValues(drawable.center[0], );
@@ -332,7 +325,11 @@ class OpenGLRenderer {
     let proj = camera.projectionMatrix;
     this.deferredShader.setViewMatrix(view);
     this.deferredShader.setProjMatrix(proj);
+    this.deferredShader.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
 
+
+    this.deferredShader.setSSAOSamples(ssaoKernel);
+    
     for (let i = 0; i < this.gbTargets.length; i ++) {
       gl.activeTexture(gl.TEXTURE0 + i);
       gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[i]);

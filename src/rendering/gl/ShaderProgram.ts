@@ -44,6 +44,7 @@ class ShaderProgram {
   unifSSAOSamples: WebGLUniformLocation;
 
   unifTexUnits: Map<string, WebGLUniformLocation>;
+ 
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -211,12 +212,14 @@ class ShaderProgram {
     }
   }
 
-  setSSAOSamples(s:Float32Array)
+  setSSAOSamples(s : Array<number>)
   {
     this.use();
     if(this.unifSSAOSamples !== -1)
     {
-      gl.uniform3fv(this.unifSSAOSamples, s);
+      // gl.uniform3fv(this.unifSSAOSamples, s, 0, 9);
+      gl.uniform3fv(this.unifSSAOSamples, s, 0, 192);
+
     }
   }
   draw(d: Drawable) {

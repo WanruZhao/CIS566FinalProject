@@ -11,7 +11,6 @@ uniform sampler2D u_gb0;
 uniform sampler2D u_gb1;
 uniform sampler2D u_gb2;
 uniform sampler2D u_SSAONoise;
-uniform float u_Time;
 uniform vec3 u_Samples[64];
 uniform mat4 u_View;
 uniform vec4 u_CamPos; 
@@ -115,8 +114,8 @@ void main() {
 
 	vec3 fragPos = texture(u_gb1, fs_UV).xyz;
 	vec3 ao_normal = texture(u_gb0, fs_UV).xyz;
-	float z_buffer = texture(u_gb0, fs_UV).w / 100.0;
-	vec3 randomVec = texture(u_SSAONoise, fs_UV * noiseScale).xyz;
+	float z_buffer = texture(u_gb0, fs_UV).w / (100.0 - 0.1);
+	vec3 randomVec = normalize(texture(u_SSAONoise, fs_UV * noiseScale).xyz);
 	vec3 tangent = normalize(randomVec - ao_normal * dot(randomVec, ao_normal));
 	vec3 bitangent = cross(ao_normal, tangent);
 	mat3 TBN = mat3(tangent, bitangent, ao_normal);
@@ -124,30 +123,46 @@ void main() {
 	float radius = 1.0;
 	for(int i = 0; i < 64; ++i)
 	{
-		float a = noise(fs_UV) * 2.0 - 1.0;
-		float b = noise(fs_UV * 10.0) * 2.0 - 1.0;
-		float c = noise(fs_UV * 100.0);
-		vec3 mySample = vec3(a,b,c);
-		mySample = normalize(mySample);
-		mySample = mySample * noise(mySample.x);
-		float myScale = float(i) / 64.0;
-		myScale = lerp(0.1, 1.0, myScale * myScale);
-		vec3 ssaoKernel = mySample * myScale;
-
-
-		vec3 ssaoSample = TBN * ssaoKernel;
-		ssaoSample = fragPos + ssaoSample * radius;
-		vec4 offset = vec4(ssaoSample, 1.0);
+		vec3 mySample = TBN * u_Samples[i];
+		mySample = fragPos + u_Samples[i] * radius;
+		vec4 offset = vec4(mySample, 1.0);
 		offset = u_Proj * offset;
 		offset.xyz /= offset.w;
 		offset.xyz = offset.xyz * 0.5 + 0.5;
-		occlusion += (z_buffer >= ssaoSample.z? 1.0 : 0.0);
+		float sampleDepth = texture(u_gb1, offset.xy).z;
+		float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
+		occlusion += (sampleDepth >= mySample.z + 0.025? 1.0 : 0.0 ) * rangeCheck;
 	}
+	
+	occlusion = 1.0 - (occlusion / 64.0);
+	// for(int i = 0; i < 64; ++i)
+	// {
+	// 	float a = noise(fs_UV) * 2.0 - 1.0;
+	// 	float b = noise(fs_UV * 10.0) * 2.0 - 1.0;
+	// 	float c = noise(fs_UV * 100.0);
+	// 	vec3 mySample = vec3(a,b,c);
+	// 	mySample = normalize(mySample);
+	// 	mySample = mySample * noise(mySample.x);
+	// 	float myScale = float(i) / 64.0;
+	// 	myScale = lerp(0.1, 1.0, myScale * myScale);
+	// 	vec3 ssaoKernel = mySample * myScale;
 
-	out_Col = vec4(vec3(z_buffer), 1.0);
-	//out_Col = vec4(u_Samples[0] * 100.0, 1.0);
 
-	//out_Col = vec4(vec3(occlusion /100.0), 1.0);
+	// 	vec3 ssaoSample = TBN * ssaoKernel;
+	// 	ssaoSample = fragPos + ssaoSample * radius;
+	// 	vec4 offset = vec4(ssaoSample, 1.0);
+	// 	offset = u_Proj * offset;
+	// 	offset.xyz /= offset.w;
+	// 	offset.xyz = offset.xyz * 0.5 + 0.5;
+	// 	occlusion += (z_buffer >= ssaoSample.z? 1.0 : 0.0);
+	// }
+
+	// out_Col = vec4(vec3(z_buffer), 1.0);
+	// out_Col = vec4(u_Samples[0], 1.0);
+		out_Col = vec4(vec3(occlusion), 1.0);
+	// out_Col = vec4(gl_FragCoord.xy / u_Dimension, 0.0, 1.0);
+
+	// out_Col = vec4(, 0.0, 1.0);
 	//out_Col = vec4(noise, 0.0, 0.0, 1.0);
 	//out_Col = vec4( 0.0, 1.0, 0.0, 1.0);
 
