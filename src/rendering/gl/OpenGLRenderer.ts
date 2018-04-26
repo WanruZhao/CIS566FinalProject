@@ -6,8 +6,9 @@ import ShaderProgram, {Shader} from './ShaderProgram';
 import PostProcess from './PostProcess'
 import Square from '../../geometry/Square';
 import { Texture } from './Texture';
-
-
+import { getPackedSettings } from 'http2';
+// import { normalize } from 'gl-matrix/src/gl-matrix/vec2';
+const ssaoKernel : Array<number> = [];
 
 class OpenGLRenderer {
   gBuffer: WebGLFramebuffer; // framebuffer for deferred rendering
@@ -17,9 +18,13 @@ class OpenGLRenderer {
                              // gbTargets[0] to store 32-bit values, while the rest
                              // of the array stores 8-bit values. You can modify
                              // this if you want more 32-bit storage.
-
+  gbNoiseTexture: WebGLTexture;
   depthTexture: WebGLTexture; // You don't need to interact with this, it's just
                               // so the OpenGL pipeline can do depth sorting
+
+
+  // shadowmapTexture:   WebGLTexture; 
+  // shadowmapBuffer:   WebGLFramebuffer;                  
 
   // post-processing buffers pre-tonemapping (32-bit color)
   post32Buffers: WebGLFramebuffer[];
@@ -35,6 +40,10 @@ class OpenGLRenderer {
 
   currentTime: number; // timer number to apply to all drawing shaders
 
+  waterTex1 : Texture = new Texture('../resources/textures/water1.jpg');
+  waterTex2 : Texture = new Texture('../resources/textures/water2.jpg');
+  waterTex3 : Texture = new Texture('../resources/textures/water2.jpg');
+
   // the shader that renders from the gbuffers into the postbuffers
   deferredShader :  PostProcess = new PostProcess(
     new Shader(gl.FRAGMENT_SHADER, require('../../shaders/deferred-render.glsl'))
@@ -44,6 +53,10 @@ class OpenGLRenderer {
   tonemapPass : PostProcess = new PostProcess(
     new Shader(gl.FRAGMENT_SHADER, require('../../shaders/tonemap-frag.glsl'))
     );
+
+  // depthmapPass : PostProcess = new PostProcess(
+  //   new Shader(gl.FRAGMENT_SHADER, require('../../shaders/depth-frag.glsl'))
+  //   );
 
   cloudPass : PostProcess = new PostProcess(
     new Shader(gl.FRAGMENT_SHADER, require('../../shaders/cloud-frag.glsl'))
@@ -101,11 +114,39 @@ class OpenGLRenderer {
     var gb0loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb0");
     var gb1loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb1");
     var gb2loc = gl.getUniformLocation(this.deferredShader.prog, "u_gb2");
+    var gbNoise = gl.getUniformLocation(this.deferredShader.prog, "u_SSAONoise");
+    this.deferredShader.setupTexUnits(["u_Water1"]);
+    this.deferredShader.setupTexUnits(["u_Water2"]);
+    this.deferredShader.setupTexUnits(["a"]);
 
     this.deferredShader.use();
     gl.uniform1i(gb0loc, 0);
     gl.uniform1i(gb1loc, 1);
     gl.uniform1i(gb2loc, 2);
+    gl.uniform1i(gbNoise, 3);
+    
+    for( let i = 0; i < 64; ++i)
+    {
+      let ssaoSample = vec3.fromValues(Math.random() * 2.0 - 1.0,
+                                       Math.random() * 2.0 - 1.0,
+                                       Math.random());
+      let a = Math.random() * 2.0 - 1.0;
+      let b = Math.random() * 2.0 - 1.0;
+      let c = Math.random();                         
+      let  l = Math.sqrt(a*a + b*b + c*c);  
+      let temp = Math.random(); 
+      a = a * temp / l;
+      b = b * temp / l;
+      c = c * temp / l;                                            
+      let ssaoScale = i * 1.0 / 64.0;
+      ssaoScale = 0.1 + ssaoScale * ssaoScale * (1.0 - 0.1);
+      a = a * ssaoScale;
+      b = b * ssaoScale;
+      c = c * ssaoScale;
+      ssaoKernel.push(ssaoScale);
+      ssaoKernel.push(b);
+      ssaoKernel.push(c);
+    }
   }
 
 
@@ -133,15 +174,51 @@ class OpenGLRenderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-      if (i == 0) {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.FLOAT, null);
+      if (i == 2) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
       }
       else {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.FLOAT, null);
       }
 
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, this.gbTargets[i], 0);
     }
+
+
+    // SSAO Noise texture
+    
+   let ssaoNoiseData: Array<number> = [];
+    for(let i = 0; i < 16; i++){
+      // let noise = vec3.fromValues(Math.random() * 2.0 - 1.0,
+      //                             Math.random() * 2.0 - 1.0,
+      //                             0.0);
+      ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
+      ssaoNoiseData.push(Math.random() * 2.0 - 1.0);
+      ssaoNoiseData.push(0.0);
+    }   
+    const ssaoNoise = new Float32Array(ssaoNoiseData);
+    this.gbNoiseTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.gbNoiseTexture);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, 4, 4, 0, gl.RGB, gl.FLOAT,ssaoNoise);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  
+    // new texture
+    this.deferredShader.bindTexToUnit("u_Water1", this.waterTex1, 4);
+    this.deferredShader.bindTexToUnit("u_Water2", this.waterTex2, 5);
+    this.deferredShader.bindTexToUnit("a", this.waterTex3, 6);
+
+    // // shadow map texture
+    // this.shadowmapTexture = gl.createTexture();
+    // gl.bindTexture(gl.TEXTURE_2D, this.shadowmapTexture);
+    // // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1024, 0,gl.RGBA, gl.UNSIGNED_BYTE, null);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
     // depth attachment
     this.depthTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
@@ -159,6 +236,16 @@ class OpenGLRenderer {
     }
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    // // create shadowmap buffer
+    // this.shadowmapBuffer = gl.createFramebuffer();
+    // gl.bindRenderbuffer(gl.RENDERBUFFER, this.shadowmapBuffer);
+    // gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 1024, 1024);
+    // gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.shadowmapTexture, 0);
+    // gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.shadowmapBuffer);
+    // gl.bindTexture(gl.TEXTURE_2D, null);
+    // gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+
 
     // create the framebuffers for post processing
     for (let i = 0; i < this.post8Buffers.length; i++) {
@@ -248,10 +335,12 @@ class OpenGLRenderer {
     gbProg.setProjMatrix(proj);
 
     gbProg.setTime(this.currentTime);
-
+    
     for (let drawable of drawables) {
       let a = vec3.fromValues(drawable.center[0], drawable.center[1], drawable.center[2]);
+      let inType = drawable.type;
       gbProg.setCenter(a);
+      gbProg.setType(inType);
       gbProg.draw(drawable);
     }
 
@@ -260,7 +349,7 @@ class OpenGLRenderer {
   }
 
   renderFromGBuffer(camera: Camera) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[0]);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
@@ -270,15 +359,38 @@ class OpenGLRenderer {
     let proj = camera.projectionMatrix;
     this.deferredShader.setViewMatrix(view);
     this.deferredShader.setProjMatrix(proj);
+    this.deferredShader.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
+    this.deferredShader.setSSAOSamples(ssaoKernel);
+    // this.deferredShader.setShadowMVMatrix();
 
+        // new texture
+        // this.deferredShader.bindTexToUnit("u_Water1", this.waterTex1, 5);
+        // this.deferredShader.bindTexToUnit("u_Water2", this.waterTex2, 6);
+    
     for (let i = 0; i < this.gbTargets.length; i ++) {
       gl.activeTexture(gl.TEXTURE0 + i);
       gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[i]);
     }
+    
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, this.gbNoiseTexture);
 
     this.deferredShader.draw();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
+
+  // renderDepthMap(cam: Camera)
+  // {
+  //   // gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[1]);
+  //   // texture
+  //   // gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[0]);
+
+  //   let view = cam.viewMatrix;
+  //   let proj = cam.projectionMatrix;
+  //   this.depthmapPass.setViewMatrix(view);
+  //   this.depthmapPass.setProjMatrix(proj);
+
+  // }
 
   renderCloudLayer(texture : Texture, cam : Camera) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.post32Buffers[1]);

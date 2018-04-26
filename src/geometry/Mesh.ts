@@ -9,13 +9,12 @@ class Mesh extends Drawable {
   normals: Float32Array;
   colors: Float32Array;
   uvs: Float32Array;
-
   objString: string;
 
-  constructor(objString: string, center: vec3) {
+  constructor(objString: string, center: vec3, inType: number) {
     super(); // Call the constructor of the super class. This is required.
     this.center = vec4.fromValues(center[0], center[1], center[2], 1);
-
+    this.type = inType;
     this.objString = objString;
   }
 

@@ -40,9 +40,14 @@ class ShaderProgram {
   unifViewProjInv : WebGLUniformLocation;
   unifEye : WebGLUniformLocation;
   unifCenter: WebGLUniformLocation;
-
-
+  unifType: WebGLUniformLocation;
+  unifSSAOSamples: WebGLUniformLocation;
+  unifShadowPMatrix: WebGLUniformLocation;
+  unifShadowMVMatrix: WebGLUniformLocation;
+  unifLightV: WebGLUniformLocation;
+  unifLightP: WebGLUniformLocation;
   unifTexUnits: Map<string, WebGLUniformLocation>;
+ 
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -72,6 +77,13 @@ class ShaderProgram {
     this.unifFar = gl.getUniformLocation(this.prog, "u_Far");
     this.unifEye = gl.getUniformLocation(this.prog, "u_Eye");
     this.unifCenter = gl.getUniformLocation(this.prog, "u_Center");
+    this.unifType = gl.getUniformLocation(this.prog, "u_Type");
+    this.unifSSAOSamples = gl.getUniformLocation(this.prog, "u_Samples");
+    this.unifShadowPMatrix = gl.getUniformLocation(this.prog, "u_PMatrix");
+    this.unifShadowMVMatrix = gl.getUniformLocation(this.prog, "u_MVMatrix");
+    this.unifLightP = gl.getUniformLocation(this.prog, "u_LightP");
+    this.unifLightV = gl.getUniformLocation(this.prog, "u_LightV");
+
 
     this.unifTexUnits = new Map<string, WebGLUniformLocation>();
   }
@@ -195,6 +207,61 @@ class ShaderProgram {
     if(this.unifCenter !== -1){
       gl.uniform3fv(this.unifCenter, center);
 
+    }
+  }
+  
+  setType(type: number)
+  {
+    this.use();
+    if(this.unifType !== -1)
+    {
+      gl.uniform1i(this.unifType, type);
+    }
+  }
+
+  setSSAOSamples(s : Array<number>)
+  {
+    this.use();
+    if(this.unifSSAOSamples !== -1)
+    {
+      gl.uniform3fv(this.unifSSAOSamples, s, 0, 192);
+    }
+  }
+
+  setShadowPMatrix(lightProjectionMatrix: mat4)
+  {
+    this.use();
+    if(this.unifShadowPMatrix !== -1)
+    {
+      gl.uniformMatrix4fv(this.unifShadowPMatrix, false, lightProjectionMatrix);
+    }
+  }
+
+  setShadowMVMatrix(lightViewMatrix: mat4)
+  {
+    this.use();
+    if(this.unifShadowMVMatrix !== -1)
+    {
+      gl.uniformMatrix4fv(this.unifShadowMVMatrix, false, lightViewMatrix);
+    }
+  }
+
+  setLightP(lightP : mat4)
+  {
+    this.use();
+    if(this.unifLightP !== -1)
+    {
+      gl.uniformMatrix4fv(this.unifLightP, false, lightP);
+    }
+  }
+
+
+  setLightV(lightV: mat4)
+  {
+    this.use();
+    if(this.unifLightV !== -1)
+    {
+      gl.uniformMatrix4fv(this.unifLightV, false, lightV);
     }
   }
 
