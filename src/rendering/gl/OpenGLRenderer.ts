@@ -57,6 +57,10 @@ class OpenGLRenderer {
     new Shader(gl.FRAGMENT_SHADER, require('../../shaders/blur-frag.glsl'))
   );
 
+  skyPass : PostProcess = new PostProcess(
+    new Shader(gl.FRAGMENT_SHADER, require('../../shaders/sky-frag.glsl'))
+  );
+
   add8BitPass(pass: PostProcess) {
     this.post8Passes.push(pass);
   }
@@ -227,9 +231,6 @@ class OpenGLRenderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.gBuffer);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.enable(gl.DEPTH_TEST);
-    // gl.disable(gl.DEPTH_TEST);
-    // gl.enable(gl.BLEND);
-    // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     let model = mat4.create();
@@ -249,7 +250,6 @@ class OpenGLRenderer {
     gbProg.setTime(this.currentTime);
 
     for (let drawable of drawables) {
-      // let a = vec3.fromValues(drawable.center[0], );
       let a = vec3.fromValues(drawable.center[0], drawable.center[1], drawable.center[2]);
       gbProg.setCenter(a);
       gbProg.draw(drawable);
@@ -292,6 +292,12 @@ class OpenGLRenderer {
     gl.activeTexture(gl.TEXTURE0);
     texture.bindTex();
 
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[2]);
+
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this.gbTargets[1]);
+
     this.cloudPass.setTime(this.currentTime);
     this.cloudPass.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
     this.cloudPass.setFar(cam.far);
@@ -308,8 +314,8 @@ class OpenGLRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.post32Targets[1]);
-    this.copyPass.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
-    this.copyPass.draw();
+    this.skyPass.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
+    this.skyPass.draw();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 

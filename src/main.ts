@@ -50,7 +50,7 @@ var timer = {
 
 
 function loadOBJText() {
-  obj0 = readTextFile('../resources/obj/fish4.obj')
+  obj0 = readTextFile('./resources/obj/fish4.obj')
 
 }
 
@@ -72,7 +72,7 @@ function loadScene() {
 
 
   // tex0 = new Texture('../resources/textures/noiset.png');
-  tex1 = new Texture('../resources/textures/uniform-noise.jpg');
+  tex1 = new Texture('./resources/textures/uniform-noise.jpg');
 
   mesh1 = new Mesh(obj0, vec3.fromValues(5, 5, 0));
   mesh1.create();
@@ -80,14 +80,24 @@ function loadScene() {
   mesh2 = new Mesh(obj0, vec3.fromValues(10, 10, 5));
   mesh2.create();
 
-  tex0 = new Texture('../resources/obj/hujing.jpg');
+  tex0 = new Texture('./resources/obj/hujing.jpg');
   // tex0 = new Texture('../resources/textures/perlinnoise.png');
   // noiseTex = new Texture('../resources/obj/perlinnoise.png');
 
 }
 
+function loadMusic() {
+  var audio = document.createElement("audio");
+  audio.src = "./music/bigfish.mp3";
+  audio.setAttribute('loop', "loop");
+  audio.play();
+}
+
 
 function main() {
+
+  loadMusic();
+
   // Initial display for framerate
   const stats = Stats();
   stats.setMode(0);
@@ -115,7 +125,7 @@ function main() {
   const camera = new Camera(vec3.fromValues(0, 9, 25), vec3.fromValues(0, 9, 0));
 
   const renderer = new OpenGLRenderer(canvas);
-  renderer.setClearColor(0.5, 0, 0, 1);
+  renderer.setClearColor(1.0, 1.0, 1.0, 1);
   gl.enable(gl.DEPTH_TEST);
 
   const standardDeferred = new ShaderProgram([
@@ -141,7 +151,7 @@ function main() {
     // TODO: pass any arguments you may need for shader passes
     // forward render mesh info into gbuffers
 
-    renderer.renderToGBuffer(camera, standardDeferred, [mesh0, mesh1, mesh2]);
+    renderer.renderToGBuffer(camera, standardDeferred, [mesh0]);
 
     // render from gbuffers into 32-bit color buffer
     renderer.renderFromGBuffer(camera);
