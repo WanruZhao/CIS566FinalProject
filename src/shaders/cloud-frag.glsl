@@ -21,8 +21,8 @@ out vec4 out_Col;
 
 
 
-//Cloud Ten by nimitz (twitter: @stormoid)
-
+//Reference: Cloud Ten by nimitz (twitter: @stormoid)
+//Shadertoy: 
 
 const float zoom = 1.;
 vec3 lgt = vec3(0);
@@ -121,31 +121,6 @@ vec4 marchV(vec3 ro, vec3 rd, float t, vec3 bgc)
 	return clamp(rz, 0., 1.);
 }
 
-float pent(vec2 p){    
-    vec2 q = abs(p);
-    return max(max(q.x*1.176-p.y*0.385, q.x*0.727+p.y), -p.y*1.237)*1.;
-}
-
-vec3 flare(vec2 p, vec2 pos) //Inspired by mu6k's lens flare (https://www.shadertoy.com/view/4sX3Rs)
-{
-	vec2 q = p-pos;
-    vec2 pds = p*(length(p))*0.75;
-	float a = atan(q.x,q.y);
-	
-    float rz = .55*(pow(abs(fract(a*.8+.12)-0.5),3.)*(noise(a*15.)*0.9+.1)*exp2((-dot(q,q)*4.))); //Spokes
-	
-    rz += max(1.0/(1.0+32.0*pent(pds+0.8*pos)),.0)*00.2; //Projected ghost (main lens)
-    vec2 p2 = mix(p,pds,-.5); //Reverse distort
-	rz += max(0.01-pow(pent(p2 + 0.4*pos),2.2),.0)*3.0;
-	rz += max(0.01-pow(pent(p2 + 0.2*pos),5.5),.0)*3.0;	
-	rz += max(0.01-pow(pent(p2 - 0.1*pos),1.6),.0)*4.0;
-    rz += max(0.01-pow(pent(-(p2 + 1.*pos)),2.5),.0)*5.0;
-    rz += max(0.01-pow(pent(-(p2 - .5*pos)),2.),.0)*4.0;
-    rz += max(0.01-pow(pent(-(p2 + .7*pos)),5.),.0)*3.0;
-	
-    return vec3(clamp(rz,0.,1.));
-}
-
 mat3 rot_x(float a){float sa = sin(a); float ca = cos(a); return mat3(1.,.0,.0,    .0,ca,sa,   .0,-sa,ca);}
 mat3 rot_y(float a){float sa = sin(a); float ca = cos(a); return mat3(ca,.0,sa,    .0,1.,.0,   -sa,.0,ca);}
 mat3 rot_z(float a){float sa = sin(a); float ca = cos(a); return mat3(ca,sa,.0,    -sa,ca,.0,  .0,.0,1.);}
@@ -174,22 +149,118 @@ vec3 waterB(vec3 direction) {
     return col;
 }
 
-vec3 skyB(vec3 direction) {
+vec3 skyB(vec2 p, vec3 direction) {
+    
     vec3 col = vec3(0.0);
     lgt = normalize(vec3(1.0,1.0,0.8));  
     float rdl = clamp(dot(direction, lgt),0.,1.);
 
-    vec3 hor = mix( vec3(.9,.9,.5)*1.0, vec3(1.0,0.8,0.6), rdl );
-    hor = mix(hor, vec3(.8,.8, 0.6),0.4);
-    // col += mix( vec3(.8,.8,.0), hor, 1.2 * exp2(-(1.0+ 0.8*(1.-rdl))*max(abs(direction.x - 0.5),0.)) )*0.8;
-    // col += .8*vec3(1.,.9,.5)*exp2(rdl*650.-650.);
-    // col += .3*vec3(1.,1.,0.1)*exp2(rdl*100.-100.);
-    // col += .5*vec3(1.,.7,0.)*exp2(rdl*50.-50.);
-    // col += .4*vec3(1.,0.,0.05)*exp2(rdl*10.-10.);  
-    col = hor;
-    return col;
+    col += .8*vec3(1.,.9,.5)*exp2(rdl*650.-650.);
+    col += .3*vec3(1.,1.,0.1)*exp2(rdl*100.-100.);
+    col += .5*vec3(1.,.7,0.)*exp2(rdl*50.-50.);
+    col += .4*vec3(1.,0.,0.05)*exp2(rdl*10.-10.);      
+
+    vec3 color1 = vec3(195.0, 92.0, 47.0);
+    vec3 color2 = vec3(234.0, 155.0, 103.0);
+    vec3 color3 = vec3(255.0, 236.0, 188.0);
+    vec3 color4 = vec3(255.0, 220.0, 127.0);
+    vec3 color5 = vec3(182.0, 133.0, 103.0);
+
+    color1 /= 255.0;
+    color2 /= 255.0;
+    color3 /= 255.0;
+    color4 /= 255.0;
+    color5 /= 255.0;
+
+    if(p.x < 0.1) {
+        return col + mix(color1, color2, p.x * 10.0);
+    } else if(p.x < 0.2) {
+        return col + mix(color2, color3, (p.x - 0.1)* 10.0);
+    } else if(p.x < 0.3) {
+        return col + mix(color3, color4, (p.x - 0.2) * 10.0);
+    } else if(p.x < 0.4) {
+        return col + mix(color4, color5, (p.x - 0.3) * 10.0);
+    } else {
+        return col + color5;
+    }
+
 }
 
+
+// Sun effect
+// Reference: https://www.shadertoy.com/view/4sX3Rs
+
+float noises(float t)
+{
+	return texture(u_frame,vec2(t,0.0)/u_Dimension.xy).x;
+}
+float noises(vec2 t)
+{
+	return texture(u_frame,t/u_Dimension.xy).x;
+}
+
+vec3 lensflare(vec2 uv,vec2 pos)
+{
+	vec2 main = uv-pos;
+	vec2 uvd = uv*(length(uv));
+	
+	float ang = atan(main.x,main.y);
+	float dist=length(main); dist = pow(dist,.1);
+	float n = noises(vec2(ang*16.0,dist*32.0));
+	
+	float f0 = 1.0/(length(uv-pos)*16.0+1.0);
+	
+	f0 = f0 + f0*(sin(noises(sin(ang*2.+pos.x)*4.0 - cos(ang*3.+pos.y))*16.)*.1 + dist*.1 + .8);
+	
+	float f1 = max(0.01-pow(length(uv+1.2*pos),1.9),.0)*7.0;
+
+	float f2 = max(1.0/(1.0+32.0*pow(length(uvd+0.8*pos),2.0)),.0)*00.25;
+	float f22 = max(1.0/(1.0+32.0*pow(length(uvd+0.85*pos),2.0)),.0)*00.23;
+	float f23 = max(1.0/(1.0+32.0*pow(length(uvd+0.9*pos),2.0)),.0)*00.21;
+	
+	vec2 uvx = mix(uv,uvd,-0.5);
+	
+	float f4 = max(0.01-pow(length(uvx+0.4*pos),2.4),.0)*6.0;
+	float f42 = max(0.01-pow(length(uvx+0.45*pos),2.4),.0)*5.0;
+	float f43 = max(0.01-pow(length(uvx+0.5*pos),2.4),.0)*3.0;
+	
+	uvx = mix(uv,uvd,-.4);
+	
+	float f5 = max(0.01-pow(length(uvx+0.2*pos),5.5),.0)*2.0;
+	float f52 = max(0.01-pow(length(uvx+0.4*pos),5.5),.0)*2.0;
+	float f53 = max(0.01-pow(length(uvx+0.6*pos),5.5),.0)*2.0;
+	
+	uvx = mix(uv,uvd,-0.5);
+	
+	float f6 = max(0.01-pow(length(uvx-0.3*pos),1.6),.0)*6.0;
+	float f62 = max(0.01-pow(length(uvx-0.325*pos),1.6),.0)*3.0;
+	float f63 = max(0.01-pow(length(uvx-0.35*pos),1.6),.0)*5.0;
+	
+	vec3 c = vec3(.0);
+	
+	c.r+=f2+f4+f5+f6; c.g+=f22+f42+f52+f62; c.b+=f23+f43+f53+f63;
+	c = c*1.3 - vec3(length(uvd)*.05);
+	c+=vec3(f0);
+	
+	return c;
+}
+
+vec3 cc(vec3 color, float factor,float factor2) // color modifier
+{
+	float w = color.x+color.y+color.z;
+	return mix(color,vec3(w)*factor,w*factor2);
+}
+
+vec3 sun(vec2 p)
+{
+	vec2 uv = p.xy / u_Dimension.xy - 0.5;
+	uv.x *= u_Dimension.x/u_Dimension.y; //fix aspect ratio
+	
+	vec3 color = vec3(1.4,1.2,1.0)*lensflare(uv,vec2(0.0));
+	color -= noises(p.xy)*.015;
+	color = cc(color,.4,.1);
+    return color;
+}
 
 
 void main()
@@ -234,7 +305,11 @@ void main()
         
 
         // calculate background color
-        vec3 col = skyB(direction);
+        vec3 col = skyB(q, direction);
+
+        col +=  sun(gl_FragCoord.xy + 0.4 * vec2(u_Dimension.x, 0.0));
+        
+
         vec3 bgc = col;
 
 
@@ -256,16 +331,23 @@ void main()
             if (rz < 100.)
             {   
                 vec4 res = marchV(origin, direction, rz-5., bgc);
-                // res.xyz += res.xyz * 0.5;
+                // // res.xyz += res.xyz * 0.5;
                 col = col*(1.0-res.w ) + res.xyz;
             }
         }
 
+
+        // add terrain
+        vec2 flipP;
         
-        //============================post effects===========================================
-        vec3 projected_flare = (lgt);//*inv_rotation);
-        // col += 1.4*vec3(0.7,0.7,0.4)*max(flare(p,-projected_flare.xy/projected_flare.z*zoom)*projected_flare.z,0.);
+        if(p.x < 0.25) {
+            flipP = vec2(p.y , p.x);
+        }
+
         
+
+        
+        //============================post effects===========================================        
         float g = smoothstep(0.03,.97,0.6);
         col = mix(mix(col,col.rgb*vec3(0.8,0.8,0.4),clamp(g*2.,0.0,1.0)), col.rgb, clamp((g-0.5)*2.,0.0,1.));
         
@@ -332,16 +414,13 @@ void main()
             if (rz < 100.)
             {   
                 vec4 res = marchV(origin, direction, rz-5., bgc);
-                // res.xyz += res.xyz * 0.5;
+                // // res.xyz += res.xyz * 0.5;
                 col = col*(1.0-res.w ) + res.xyz;
             }
         }
 
         
         //============================post effects===========================================
-        vec3 projected_flare = (-lgt);//*inv_rotation);
-        // col += 1.4*vec3(0.7,0.7,0.4)*max(flare(p,-projected_flare.xy/projected_flare.z*zoom)*projected_flare.z,0.);
-        
         float g = smoothstep(0.03,.97,0.51);
         col = mix(mix(col,col.grb*vec3(0.0,0.75,0.7),clamp(g*2.,0.0,1.0)), col.brg, clamp((g-0.5)*2.,0.0,1.));
         
