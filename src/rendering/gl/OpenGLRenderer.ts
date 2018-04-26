@@ -361,6 +361,7 @@ class OpenGLRenderer {
     this.deferredShader.setProjMatrix(proj);
     this.deferredShader.setDimension(vec2.fromValues(this.canvas.width, this.canvas.height));
     this.deferredShader.setSSAOSamples(ssaoKernel);
+    // this.deferredShader.setShadowMVMatrix();
 
         // new texture
         // this.deferredShader.bindTexToUnit("u_Water1", this.waterTex1, 5);
