@@ -8003,9 +8003,9 @@ const ssaoKernel = [];
 class OpenGLRenderer {
     constructor(canvas) {
         this.canvas = canvas;
-        this.waterTex1 = new __WEBPACK_IMPORTED_MODULE_4__Texture__["a" /* Texture */]('../resources/textures/water1.jpg');
-        this.waterTex2 = new __WEBPACK_IMPORTED_MODULE_4__Texture__["a" /* Texture */]('../resources/textures/water2.jpg');
-        this.waterTex3 = new __WEBPACK_IMPORTED_MODULE_4__Texture__["a" /* Texture */]('../resources/textures/water2.jpg');
+        this.waterTex1 = new __WEBPACK_IMPORTED_MODULE_4__Texture__["a" /* Texture */]('./resources/textures/water1.jpg');
+        this.waterTex2 = new __WEBPACK_IMPORTED_MODULE_4__Texture__["a" /* Texture */]('./resources/textures/water2.jpg');
+        this.waterTex3 = new __WEBPACK_IMPORTED_MODULE_4__Texture__["a" /* Texture */]('./resources/textures/water2.jpg');
         // the shader that renders from the gbuffers into the postbuffers
         this.deferredShader = new __WEBPACK_IMPORTED_MODULE_3__PostProcess__["a" /* default */](new __WEBPACK_IMPORTED_MODULE_2__ShaderProgram__["a" /* Shader */](__WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].FRAGMENT_SHADER, __webpack_require__(34)));
         // shader that maps 32-bit color to 8-bit color
