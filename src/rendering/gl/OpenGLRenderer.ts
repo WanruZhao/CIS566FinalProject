@@ -40,9 +40,9 @@ class OpenGLRenderer {
 
   currentTime: number; // timer number to apply to all drawing shaders
 
-  waterTex1 : Texture = new Texture('../resources/textures/water1.jpg');
-  waterTex2 : Texture = new Texture('../resources/textures/water2.jpg');
-  waterTex3 : Texture = new Texture('../resources/textures/water2.jpg');
+  waterTex1 : Texture = new Texture('./resources/textures/water1.jpg');
+  waterTex2 : Texture = new Texture('./resources/textures/water2.jpg');
+  waterTex3 : Texture = new Texture('./resources/textures/water2.jpg');
 
   // the shader that renders from the gbuffers into the postbuffers
   deferredShader :  PostProcess = new PostProcess(
