@@ -94,8 +94,8 @@ function loadScene() {
   //  tex1 = new Texture('../resources/textures/perlinnoise.png');
 
   // noiseTex = new Texture('../resources/obj/perlinnoise.png');
-   waterTex1 = new Texture('./resources/textures/water1.jpg');
-   waterTex2 = new Texture('./resources/textures/water1.jpg');
+   waterTex1 = new Texture('./resources/textures/water3.png');
+   waterTex2 = new Texture('./resources/textures/water2.jpg');
 
 }
 
@@ -135,7 +135,7 @@ function main() {
   // Initial call to load scene
   loadScene();
 
-  const camera = new Camera(vec3.fromValues(0, 9, 25), vec3.fromValues(0, 9, 0));
+  const camera = new Camera(vec3.fromValues(20, -10, 20), vec3.fromValues(0, 10, 0));
 
   const renderer = new OpenGLRenderer(canvas);
   renderer.setClearColor(1.0, 1.0, 1.0, 1);

@@ -24,7 +24,11 @@ uniform mat4 u_Proj;
 uniform float u_Time;
 
 
-const vec4 lightPos = vec4(50, 50, 0, 1); 
+const vec4 lightPos = vec4(-5,-5, -10, 1); 
+
+vec3 depthFog(vec3 col, float t) {
+	return mix(col, vec3(0.8, 0.6, 0.2), t);
+}
 
 float lerp(float a, float b, float f)
 {
@@ -93,6 +97,14 @@ void main() {
 
 	// if(texture(u_gb1, fs_UV).x > 0.5) term = 1.0;
 	term = clamp(term, 0.0, 1.0);
+
+	if(fs_UV.x < 0.5) {
+		col += vec3(0.8, 0.6, 0.2) * 0.5;
+	} else {
+		col += vec3(0.0, 0.2, 0.2) * 0.5;
+	}
+
+	col = clamp(col, vec3(0.0), vec3(1.0));
 	
 
     // ==================== SSAO ======================//
@@ -136,7 +148,14 @@ void main() {
 	// col = (texture(tex_Color, fs_UV/2.0 + vec2(texTime1) ).rgb + texture(tex_Noise, fs_UV/2.0 + vec2(texTime2) ).rgb) / 2.0;
 	// col = vec3(1.0);
 	vec3 waterCol = (texture(u_Water1, fs_UV/2.0 + vec2(texTime1, texTime3) ).rgb + texture(u_Water2, fs_UV/2.0 + vec2(texTime2, texTime4) ).rgb) / 2.0;
-	if(fs_UV.x > 0.5) col += waterCol * 0.5;
+	if(fs_UV.x > 0.5) {
+		
+		col *= term * occlusion;
+		col = mix(col, vec3(0.0, 0.6, 0.8), 0.1);
+		col += waterCol * 0.2;
+	} else {
+		col = depthFog(col * term * occlusion, z_buffer);
+	}
 	// vec3 waterCol = texture(u_Water2, fs_UV/2.0 + vec2(texTime2) ).rgb;
 	
 	// out_Col = vec4(vec3(z_buffer), 1.0);
@@ -144,7 +163,7 @@ void main() {
 		// out_Col = vec4(randomVec, 1.0);
 	// out_Col = vec4(vec3(occlusion), 1.0);
 	// out_Col = vec4(gl_FragCoord.xy / u_Dimension, 0.0, 1.0);
-	out_Col = vec4(col * term * occlusion, 1.0);
+	out_Col = vec4(col, 1.0);
 
 
 	// out_Col = vec4(, 0.0, 1.0);
