@@ -101,7 +101,7 @@ function loadScene() {
 
 function loadMusic() {
   var audio = document.createElement("audio");
-  audio.src = "./music/bigfish.mp3";
+  audio.src = "./music/fish.mp3";
   audio.setAttribute('loop', "loop");
   audio.play();
 }
