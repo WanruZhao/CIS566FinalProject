@@ -7,6 +7,8 @@ Demo: https://wanruzhao.github.io/CIS566FinalProject/
 Example
 ========
 
+![](wholeScene.jpeg)
+
 Features
 =======
 - Xinyu Lin
